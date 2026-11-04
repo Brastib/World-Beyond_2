@@ -22,7 +22,9 @@
 
 ## M1 Schritt 1 (Branch m1-wachstum) – Stand 2026-11-04
 - `dotnet test`: **30/30 bestanden** (24 alte + 6 neue M1-Tests). Szenario Seed 12345, 3 Jahre: 18 → 30 Personen, 6 → 12 Haushalte, 12 Häuser, 12 Geburten, 0 Tode, alle drei Siedlungen „Wächst“.
-- Unity: **noch nicht geprüft** (UI-Änderungen: Statistik-Panel, Beruf im Inspektor, Kinder kleiner).
+- Unity 6000.6.0f1 auf dem PC des Nutzers (2026-11-04 19:12, Ausgabe vom Nutzer kopiert): Einrichtung, EditMode, PlayMode, Build, Build-Smoke jeweils Exitcode 0; **EditMode 30/30, PlayMode 3/3**.
+- Nicht geprüft: das neue Statistik-Panel und die Berufsanzeige im echten Spiel (kein manueller Test, kein Screenshot ausgewertet).
+- Die `.meta`-Dateien der neuen Skripte (Jobs, Lifecycle, SettlementPlanner, SaveFixtures, M1Tests) hat Unity auf dem PC erzeugt; sie sind noch nicht im Repo.
 
 ## Nächster Schritt
 M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen (Pull Request, Entscheidung des Nutzers).
