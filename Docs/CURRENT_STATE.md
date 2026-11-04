@@ -1,6 +1,6 @@
 # Ist-Stand (nur belegte Fakten)
 
-**Datum:** 2026-11-04 · **Meilenstein:** M0 abgeschlossen (Übergabe zur Prüfung)
+**Datum:** 2026-11-04 · **Meilenstein:** M0 in Arbeit (nur noch manuelle Abnahme offen)
 
 ## Tatsächlich geprüft
 - `dotnet test` (Linux-Cloud, .NET 8.0.133): **24/24 Tests bestanden**. Unity-freie Assemblies bauen mit `TreatWarningsAsErrors` gegen netstandard2.1/C# 9 (wie Unity).
@@ -10,8 +10,10 @@
   - Build-Smoke (Seed 12345): Lager nach 30 Tagen fertig, Haushalt im Haus, Zustands-Hash vor Speichern und nach Laden gleich (`30b39c7cdcde05b1`), Screenshot erzeugt.
 - Erster Lauf davor: `Selection_RaycastHitsPersonPlaceholder` schlug fehl. Nach `Physics.SyncTransforms()` in `EntityViews.Animate` bestanden; die Ursache (Collider nicht nachgezogen) ist daraus abgeleitet, nicht einzeln nachgemessen.
 
-## Manuell geprüft (Aussage des Nutzers)
-- 2026-11-04, `Builds\Windows\WorldBeyond.exe`: Nutzer hat die vier Schritte (Person anklicken → Inspektor, B → Lager bauen, Tempo 1–4/Pause, F5 → Neustart → F9) ausgeführt und meldet „Es geht“. Einzelergebnisse je Schritt wurden nicht separat protokolliert; kein Screenshot davon.
+## Manuell: teilweise
+- 2026-11-04 15:34: `WorldBeyond.exe` läuft auf dem PC des Nutzers, Nutzer meldet „Es geht“. Welche Einzelschritte geprüft wurden, ist nicht protokolliert.
+- **NICHT geprüft:** Speichern → Programm neu starten → Laden. Um 15:36 lag kein manuell gespeicherter Stand im Saves-Ordner (nur Autosaves und Smoke-Stand).
+- Offen je ja/nein: Klick-Auswahl → Inspektor, Lager per B bauen, Tempo/Kamera, F5 → Neustart → F9.
 
 ## Bekannte Risiken
 - `BillingMode.json` (Purchasing-Überbleibsel) entfernt in 1827cd4; danach kein neuer Unity-Lauf (reine Löschung einer unreferenzierten Datei).
@@ -19,4 +21,4 @@
 - M0-Vereinfachungen siehe DECISIONS ADR-009.
 
 ## Nächster Schritt
-M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen.
+M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: manuelle Abnahme abschließen und Branch `unity-fixes-m0` nach `main` mergen.
