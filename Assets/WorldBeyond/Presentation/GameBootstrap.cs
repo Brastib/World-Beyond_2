@@ -24,6 +24,7 @@ namespace WorldBeyond.Presentation
         public int HoverCell = -1;
         public string HoverReason;
         public bool ShowDebug = true;
+        public bool ShowStats;
         float _sinceTick;
         GameObject _ghost;
 
@@ -94,6 +95,7 @@ namespace WorldBeyond.Presentation
             if (InputAdapter.KeyDown(KeyCode.F5)) Session.Save("schnell");
             if (InputAdapter.KeyDown(KeyCode.F9)) Session.Load("schnell");
             if (InputAdapter.KeyDown(KeyCode.F3)) ShowDebug = !ShowDebug;
+            if (InputAdapter.KeyDown(KeyCode.T)) ShowStats = !ShowStats;
             if (InputAdapter.KeyDown(KeyCode.F12)) TakeScreenshot();
             if (InputAdapter.KeyDown(KeyCode.L)) { Map.Layer = (MapLayer)(((int)Map.Layer + 1) % 3); Map.Refresh(Session.World.Map); }
             if (InputAdapter.KeyDown(KeyCode.B)) SetTool(ToolMode.LagerBauen);

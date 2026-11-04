@@ -59,6 +59,7 @@ namespace WorldBeyond.Presentation
             Inspector(w);
             Messages(h);
             if (_g.ShowDebug) DebugOverlay(w, h);
+            if (_g.ShowStats) Stats(w);
             if (_help) Help(w, h);
             if (_g.HoverReason != null && !PointerOverUi)
             {
@@ -96,6 +97,7 @@ namespace WorldBeyond.Presentation
             GUILayout.FlexibleSpace();
             string who = civ != null ? "Du spielst: " + civ.Name : "Beobachter";
             if (GUILayout.Button(new GUIContent(who + " ▸", "Wechselt die gespielte Zivilisation (nach der letzten: Beobachter)."), GUILayout.Width(200))) _g.CyclePlayerCiv();
+            if (GUILayout.Button(_g.ShowStats ? "Statistik ✕" : "Statistik (T)", GUILayout.Width(110))) _g.ShowStats = !_g.ShowStats;
             if (GUILayout.Button(_help ? "Hilfe ✕" : "Hilfe", GUILayout.Width(70))) _help = !_help;
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
@@ -181,7 +183,7 @@ namespace WorldBeyond.Presentation
                     var p = w.PersonById(_g.SelId);
                     if (p == null) { sb.Append("Person existiert nicht mehr."); break; }
                     sb.AppendLine($"<b>Person {p.Name}</b> #{p.Id}");
-                    sb.AppendLine($"Alter: {p.AgeDays / Calendar.DaysPerYear} Jahre · Beruf: Sammler (M0: Allrounder)");
+                    sb.AppendLine($"Alter: {p.AgeDays / Calendar.DaysPerYear} Jahre · Beruf: <b>{Jobs.RoleName(p.Role)}</b>");
                     sb.AppendLine($"Gesundheit {p.Health} · Hunger {p.Hunger}");
                     sb.AppendLine($"Aufgabe: <b>{p.Task}</b>{TaskDetail(w, content, p)}");
                     sb.AppendLine($"Trägt: {(p.CarryAmount > 0 ? p.CarryAmount + " " + p.CarryType : "nichts")} · gesammelt gesamt {p.TotalGathered}");
@@ -262,9 +264,35 @@ namespace WorldBeyond.Presentation
             var stock = Economy.SettlementStock(w, content, sid);
             sb.AppendLine();
             sb.AppendLine($"<b>Siedlung {s.Name}</b> · Nation <b>{civ.Name}</b>");
-            sb.AppendLine($"Einwohner {pop} · Häuser {houses} · Baustellen {sites}");
+            sb.AppendLine($"Einwohner {pop} · Häuser {houses} · Baustellen {sites} · Geburten {s.Births} · Tode {s.Deaths}");
+            if (!string.IsNullOrEmpty(s.Status)) sb.AppendLine("<b>Lage:</b> " + s.Status);
             sb.AppendLine($"Lager: {Vec(stock)} ({Res.Sum(stock)}/{cap})");
             if (Res.Sum(stock) >= cap - 5) sb.AppendLine("<color=#ffb060>Lager voll: Sammeln stockt. Baue ein Lager (B).</color>");
+        }
+
+        void Stats(float width)
+        {
+            var w = _g.Session.World; var content = _g.Session.Content;
+            var r = Panel(new Rect(266, 48, Mathf.Min(900, width - 680), 60 + 120 * w.Settlements.Count));
+            var sb = new StringBuilder("<b>Statistik</b> (T schließt)\n");
+            foreach (var s in w.Settlements)
+            {
+                var civ = w.Civ(s.CivId);
+                var people = w.People.Where(p => p.SettlementId == s.Id).ToList();
+                var hh = w.Households.Where(h => h.SettlementId == s.Id).ToList();
+                int houses = w.Buildings.Count(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.House);
+                int storages = w.Buildings.Count(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.Storage);
+                var stock = Economy.SettlementStock(w, content, s.Id);
+                var roles = string.Join(", ", System.Enum.GetValues(typeof(Role)).Cast<Role>()
+                    .Select(ro => new { ro, n = people.Count(p => p.Role == ro) }).Where(x => x.n > 0).Select(x => $"{Jobs.RoleName(x.ro)} {x.n}"));
+                sb.AppendLine();
+                sb.AppendLine($"<b><color=#{ColorUtility.ToHtmlStringRGB(PlaceholderStyle.Civ(civ.ColorRgb))}>■</color> {s.Name}</b> ({civ.Name}{(civ.Id == w.PlayerCivId ? ", du" : ", KI")})");
+                sb.AppendLine($"Einwohner {people.Count} (Kinder {people.Count(p => !p.IsAdult)}) · Haushalte {hh.Count} (ohne Haus {hh.Count(h => h.HomeBuildingId == 0)}) · Häuser {houses} · Lagerorte {storages + 1} (inkl. Ortszentrum)");
+                sb.AppendLine($"Bestand: {Vec(stock)} · Geburten {s.Births} · Tode {s.Deaths}");
+                sb.AppendLine("Berufe: " + roles);
+                sb.AppendLine("Lage: " + s.Status);
+            }
+            GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, r.height - 12), sb.ToString(), _small);
         }
 
         void Messages(float height)
@@ -302,8 +330,8 @@ namespace WorldBeyond.Presentation
                 "<b>Steuerung</b>\n" +
                 "WASD/Pfeile: Kamera schwenken · Q/E oder rechte Maustaste: drehen · Mausrad: zoomen · mittlere Maustaste: ziehen\n" +
                 "Linksklick: auswählen · B: Lager bauen · R: Straße (Start, dann Ende klicken) · Esc: abbrechen\n" +
-                "Leertaste: Pause · 1–4: Tempo 1×/2×/4×/8× · L: Kartenebene · F5/F9: Schnell speichern/laden · F3: Debug · F12: Screenshot\n\n" +
-                "<b>Platzhalter</b>\nKugel = Person (Farbe = Nation), kleiner Würfel darüber = Traglast (rosa Nahrung, braun Holz, grau Stein)\n" +
+                "Leertaste: Pause · 1–4: Tempo 1×/2×/4×/8× · L: Kartenebene · T: Statistik · F5/F9: Schnell speichern/laden · F3: Debug · F12: Screenshot\n\n" +
+                "<b>Platzhalter</b>\nKugel = Person (Farbe = Nation, kleine Kugel = Kind), kleiner Würfel darüber = Traglast (rosa Nahrung, braun Holz, grau Stein)\n" +
                 "Quader = Gebäude (hoch: Ortszentrum, mittel: Haus, flach: Lager), grau und flach = Baustelle\n" +
                 "Rosa Felder = Beeren, dunkelgrün = Bäume, grau = Felsen, braun = Straße", _small);
         }

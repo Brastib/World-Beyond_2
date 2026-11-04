@@ -14,8 +14,17 @@ namespace WorldBeyond.Simulation.Systems
         public const int MaxBuildersPerSite = 3;
         public const int RetryCooldown = 24;
         public const int MovePointsPerTick = 2;
-        /// <summary>Zielbestände je Siedlung; die Ressource mit dem geringsten Bestand/Ziel-Verhältnis wird gesammelt.</summary>
+        /// <summary>Grundziele je Siedlung; die Ressource mit dem geringsten Bestand/Ziel-Verhältnis wird gesammelt.</summary>
         public static readonly int[] StockTargets = { 100, 80, 40 };
+        /// <summary>Wintervorrat: Nahrungsziel wächst mit der Bevölkerung (90 Wintertage × 1 Nahrung, halb gedeckt durch Restbeeren).</summary>
+        public const int FoodTargetPerPerson = 45;
+
+        public static int[] Targets(WorldState w, int settlementId)
+        {
+            int pop = 0;
+            foreach (var p in w.People) if (p.SettlementId == settlementId) pop++;
+            return new[] { Math.Max(StockTargets[0], pop * FoodTargetPerPerson), StockTargets[1], StockTargets[2] };
+        }
 
         public static void Tick(WorldSimulation sim)
         {
@@ -69,9 +78,24 @@ namespace WorldBeyond.Simulation.Systems
         static void Decide(WorldSimulation sim, Person p)
         {
             if (p.CarryAmount > 0) { StartDeliver(sim, p); return; }
+            switch (p.Role)
+            {
+                case Role.Kind: SetIdle(p, RetryCooldown); return;
+                case Role.Baumeister:
+                    if (TryBuild(sim, p) || TryHaul(sim, p)) return;
+                    break;
+                case Role.Traeger:
+                    if (TryHaul(sim, p) || TryBuild(sim, p)) return;
+                    break;
+                default:
+                    // Rohstoffberufe sammeln ihren Rohstoff; ist das nicht möglich, helfen sie wie bisher überall aus.
+                    var own = Jobs.RoleResource(p.Role);
+                    if (own.HasValue && TryGather(sim, p, (int)own.Value)) return;
+                    break;
+            }
             if (TryHaul(sim, p)) return;
             if (TryBuild(sim, p)) return;
-            if (TryGather(sim, p)) return;
+            if (TryGather(sim, p, -1)) return;
             SetIdle(p, RetryCooldown / 2);
         }
 
@@ -137,22 +161,24 @@ namespace WorldBeyond.Simulation.Systems
             return false;
         }
 
-        static bool TryGather(WorldSimulation sim, Person p)
+        static bool TryGather(WorldSimulation sim, Person p, int only)
         {
             var w = sim.World;
             int free = 0;
             foreach (var b in Economy.Storages(w, sim.Content, p.SettlementId)) free += Economy.FreeCapacity(b, sim.Content);
             if (free <= 0) return false;
             var stock = Economy.SettlementStock(w, sim.Content, p.SettlementId);
+            var targets = Targets(w, p.SettlementId);
             var order = new[] { 0, 1, 2 };
             // Stabile Sortierung nach Bestand/Ziel (Kreuzprodukt, keine Gleitkommazahlen).
             for (int i = 1; i < order.Length; i++)
-                for (int j = i; j > 0 && (long)stock[order[j]] * StockTargets[order[j - 1]] < (long)stock[order[j - 1]] * StockTargets[order[j]]; j--)
+                for (int j = i; j > 0 && (long)stock[order[j]] * targets[order[j - 1]] < (long)stock[order[j - 1]] * targets[order[j]]; j--)
                 { int t = order[j]; order[j] = order[j - 1]; order[j - 1] = t; }
             foreach (int r in order)
             {
+                if (only >= 0 && r != only) continue;
                 // Lagerplatz nicht mit Überfluss blockieren: über dem doppelten Ziel wird diese Ressource nicht gesammelt.
-                if (stock[r] >= StockTargets[r] * 2) continue;
+                if (stock[r] >= targets[r] * 2) continue;
                 int cell = NearestResource(w.Map, p.Cell, (ResourceType)r);
                 if (cell < 0 || !GoTo(sim, p, cell)) continue;
                 p.Task = PersonTask.Sammeln; p.TaskResource = (ResourceType)r; p.TargetBuildingId = 0;

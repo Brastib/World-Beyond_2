@@ -29,9 +29,8 @@ namespace WorldBeyond.Simulation.Systems
             var def = content.Building(b.DefId);
             var s = w.SettlementById(b.SettlementId);
             w.AddLog("Bau", $"{s.Name}: {def.Name} #{b.Id} fertiggestellt.", b.Id);
-            if (b.OwnerHouseholdId != 0)
+            if (b.OwnerHouseholdId != 0 && w.HouseholdById(b.OwnerHouseholdId) is Household h)
             {
-                var h = w.HouseholdById(b.OwnerHouseholdId);
                 h.HomeBuildingId = b.Id;
                 h.PendingHouseSiteId = 0;
                 w.AddLog("Haushalt", $"{h.Name} bezieht sein Haus #{b.Id}.", h.Id);

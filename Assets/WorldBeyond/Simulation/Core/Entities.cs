@@ -18,6 +18,10 @@ namespace WorldBeyond.Simulation.Core
         public int CivId;
         public string Name = "";
         public int CenterCell;
+        /// <summary>Letzte Wachstumsbegründung (Save v2). Wird täglich neu bewertet, Änderungen kommen ins Protokoll.</summary>
+        public string Status = "";
+        public int Births;
+        public int Deaths;
     }
 
     public sealed class Household : IEntity
@@ -29,14 +33,22 @@ namespace WorldBeyond.Simulation.Core
         public int HomeBuildingId;
         /// <summary>0 = kein Hausbau beauftragt.</summary>
         public int PendingHouseSiteId;
+        /// <summary>Tag der letzten Geburt, -1 = nie (Save v2).</summary>
+        public int LastBirthDay = -1;
         public readonly List<int> MemberIds = new List<int>();
     }
+
+    /// <summary>Beruf (Save v2). Kind = unter <see cref="Person.AdultAgeDays"/>, arbeitet nicht. Werte nur anhängen.</summary>
+    public enum Role : byte { Sammler, Holzfaeller, Bergarbeiter, Baumeister, Traeger, Kind }
 
     public enum PersonTask : byte { Leerlauf, Sammeln, Abliefern, MaterialHolen, MaterialBringen, Bauen }
 
     public sealed class Person : IEntity
     {
+        public const int AdultAgeDays = 14 * Calendar.DaysPerYear;
         public int Id { get; set; }
+        public Role Role;
+        public bool IsAdult => AgeDays >= AdultAgeDays;
         public int HouseholdId;
         public int SettlementId;
         public int CivId;

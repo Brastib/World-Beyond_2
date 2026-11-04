@@ -11,8 +11,11 @@ namespace WorldBeyond.Simulation.Systems
         public static void Run(WorldSimulation sim)
         {
             Needs(sim);
+            Lifecycle.Run(sim);
             Nature(sim.World);
+            Jobs.Assign(sim.World, sim.Content);
             Households(sim);
+            SettlementPlanner.Run(sim);
         }
 
         static void Needs(WorldSimulation sim)
@@ -54,6 +57,13 @@ namespace WorldBeyond.Simulation.Systems
             foreach (var h in w.Households)
             {
                 if (h.HomeBuildingId != 0 || h.PendingHouseSiteId != 0) continue;
+                var vacant = VacantHouse(w, sim.Content, h.SettlementId);
+                if (vacant != null)
+                {
+                    h.HomeBuildingId = vacant.Id; vacant.OwnerHouseholdId = h.Id;
+                    w.AddLog("Haushalt", $"{h.Name} zieht in das leerstehende Haus #{vacant.Id}.", h.Id);
+                    continue;
+                }
                 bool affordable = true;
                 for (int r = 0; r < Res.Count && affordable; r++)
                 {
@@ -64,7 +74,7 @@ namespace WorldBeyond.Simulation.Systems
                 }
                 if (!affordable) continue;
                 var s = w.SettlementById(h.SettlementId);
-                int cell = FindHouseCell(w, s);
+                int cell = FindFreeCell(w, s, 2, HouseSearchRadius);
                 if (cell < 0)
                 {
                     w.AddLog("Haushalt", $"{h.Name}: kein freier Bauplatz im Umkreis von {HouseSearchRadius} Feldern.", h.Id);
@@ -76,12 +86,24 @@ namespace WorldBeyond.Simulation.Systems
             }
         }
 
-        /// <summary>Nächster gültiger Bauplatz um das Zentrum: Abstand 2..Radius, gleicher Abstand nach Zellindex.</summary>
-        static int FindHouseCell(WorldState w, Settlement s)
+        static Building VacantHouse(WorldState w, ContentCatalog content, int settlementId)
+        {
+            foreach (var b in w.Buildings)
+            {
+                if (b.SettlementId != settlementId || !b.Complete || content.Building(b.DefId).HousingCapacity == 0) continue;
+                bool used = false;
+                foreach (var h in w.Households) if (h.HomeBuildingId == b.Id) { used = true; break; }
+                if (!used) return b;
+            }
+            return null;
+        }
+
+        /// <summary>Nächster gültiger Bauplatz um das Zentrum: Abstand min..max, gleicher Abstand nach Zellindex.</summary>
+        public static int FindFreeCell(WorldState w, Settlement s, int minDist, int maxDist)
         {
             var m = w.Map;
             int cx = m.X(s.CenterCell), cy = m.Y(s.CenterCell);
-            for (int d = 2; d <= HouseSearchRadius; d++)
+            for (int d = minDist; d <= maxDist; d++)
                 for (int y = cy - d; y <= cy + d; y++)
                     for (int x = cx - d; x <= cx + d; x++)
                     {

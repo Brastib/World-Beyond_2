@@ -60,6 +60,8 @@ namespace WorldBeyond.Presentation
                     _people[p.Id] = go;
                     _to[p.Id] = CellCenter(m, p.Cell);
                 }
+                float sc = p.IsAdult ? 1f : 0.65f;
+                go.transform.localScale = PlaceholderStyle.Person.Scale * sc;
                 _from[p.Id] = go.transform.position - Vector3.up * PlaceholderStyle.Person.Scale.y * 0.5f;
                 _to[p.Id] = CellCenter(m, p.Cell);
                 var carryT = go.transform.GetChild(0).gameObject;
@@ -95,6 +97,8 @@ namespace WorldBeyond.Presentation
                 var pos = Vector3.Lerp(_from[kv.Key], _to[kv.Key], Mathf.Clamp01(t));
                 kv.Value.transform.position = pos + Vector3.up * PlaceholderStyle.Person.Scale.y * 0.5f;
             }
+            // Auswahl-Raycasts laufen im selben Frame: Collider sofort nachziehen, nicht erst beim nächsten Physik-Schritt.
+            Physics.SyncTransforms();
         }
 
         public void ShowSelection(Vector3? worldPos, float size)

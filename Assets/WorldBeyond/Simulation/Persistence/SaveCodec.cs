@@ -30,7 +30,8 @@ namespace WorldBeyond.Simulation.Persistence
     /// </summary>
     public static class SaveCodec
     {
-        public const int CurrentFormatVersion = 1;
+        /// <summary>v1: M0. v2: Beruf, Geburtstag des Haushalts, Siedlungsstatus/-zähler (M1).</summary>
+        public const int CurrentFormatVersion = 2;
         public const string GameVersion = "0.0.1-m0";
         static readonly byte[] Magic = Encoding.ASCII.GetBytes("WBRS");
 
@@ -56,7 +57,7 @@ namespace WorldBeyond.Simulation.Persistence
         {
             Parse(file, out header, out var payload);
             WorldState w;
-            try { w = WorldSerializer.Deserialize(payload); }
+            try { w = WorldSerializer.Deserialize(payload, header.FormatVersion); }
             catch (SaveLoadException) { throw; }
             catch (Exception ex) { throw new SaveLoadException("Spielstand-Inhalt nicht lesbar: " + ex.Message, ex); }
             var errors = WorldValidator.Validate(w);
@@ -79,7 +80,7 @@ namespace WorldBeyond.Simulation.Persistence
                     if (h.FormatVersion > CurrentFormatVersion)
                         throw new SaveLoadException($"Spielstand stammt aus neuerer Version (Format {h.FormatVersion}, unterstützt bis {CurrentFormatVersion}).");
                     if (h.FormatVersion < 1) throw new SaveLoadException($"Unbekannte Formatversion {h.FormatVersion}.");
-                    // Migrationen älterer Formate werden hier eingehängt (ab Format 2), siehe Docs/DECISIONS.md ADR-005.
+                    // Ältere Formate werden in WorldSerializer.Deserialize mit deterministischen Standardwerten migriert (ADR-005).
                     h.SaveName = i.ReadString(); h.SavedUtc = new DateTime(i.ReadInt64(), DateTimeKind.Utc); h.GameVersion = i.ReadString();
                     h.Seed = i.ReadUInt64(); h.Tick = i.ReadInt64(); h.Population = i.ReadInt32();
                     int len = i.ReadInt32();
