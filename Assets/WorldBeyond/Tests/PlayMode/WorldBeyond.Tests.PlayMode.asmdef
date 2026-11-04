@@ -1,0 +1,16 @@
+{
+    "name": "WorldBeyond.Tests.PlayMode",
+    "rootNamespace": "WorldBeyond.Tests.PlayMode",
+    "references": [
+        "WorldBeyond.Presentation.Unity",
+        "WorldBeyond.Simulation.Core",
+        "WorldBeyond.Content",
+        "WorldBeyond.Simulation.Systems",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

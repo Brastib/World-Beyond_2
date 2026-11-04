@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Unity-freie Tests. Die Testdateien liegen unter Assets/WorldBeyond/Tests/Shared und laufen auch als Unity-EditMode-Tests. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/WorldBeyond/Tests/Shared/**/*.cs" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <ProjectReference Include="../WorldBeyond.Simulation.Core/WorldBeyond.Simulation.Core.csproj" />
+    <ProjectReference Include="../WorldBeyond.Content/WorldBeyond.Content.csproj" />
+    <ProjectReference Include="../WorldBeyond.Simulation.Systems/WorldBeyond.Simulation.Systems.csproj" />
+    <ProjectReference Include="../WorldBeyond.Simulation.Persistence/WorldBeyond.Simulation.Persistence.csproj" />
+  </ItemGroup>
+</Project>

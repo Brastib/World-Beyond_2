@@ -1,0 +1,17 @@
+{
+    "name": "WorldBeyond.Tests.Shared",
+    "rootNamespace": "WorldBeyond.Tests",
+    "references": [
+        "WorldBeyond.Simulation.Core",
+        "WorldBeyond.Content",
+        "WorldBeyond.Simulation.Systems",
+        "WorldBeyond.Simulation.Persistence",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": ["Editor"],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

@@ -1,0 +1,7 @@
+{
+    "name": "WorldBeyond.Simulation.Core",
+    "rootNamespace": "WorldBeyond.Simulation.Core",
+    "references": [],
+    "noEngineReferences": true,
+    "autoReferenced": true
+}

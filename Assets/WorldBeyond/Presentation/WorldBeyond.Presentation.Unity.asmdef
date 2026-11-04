@@ -1,0 +1,15 @@
+{
+    "name": "WorldBeyond.Presentation.Unity",
+    "rootNamespace": "WorldBeyond.Presentation",
+    "references": [
+        "WorldBeyond.Simulation.Core",
+        "WorldBeyond.Content",
+        "WorldBeyond.Simulation.Systems",
+        "WorldBeyond.Simulation.Persistence",
+        "Unity.InputSystem"
+    ],
+    "autoReferenced": true,
+    "versionDefines": [
+        { "name": "com.unity.inputsystem", "expression": "1.0.0", "define": "WB_HAS_INPUT_SYSTEM" }
+    ]
+}

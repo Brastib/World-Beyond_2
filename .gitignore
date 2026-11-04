@@ -1,0 +1,31 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+*.csproj
+*.sln
+!/DotNet/**/*.csproj
+!/DotNet/*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+# dotnet
+/DotNet/**/bin/
+/DotNet/**/obj/
+/DotNet/TestResults/
+# Testergebnisse lokal
+/TestResults/

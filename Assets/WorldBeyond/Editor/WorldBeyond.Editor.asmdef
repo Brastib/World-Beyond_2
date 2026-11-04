@@ -1,0 +1,13 @@
+{
+    "name": "WorldBeyond.Editor",
+    "rootNamespace": "WorldBeyond.EditorTools",
+    "references": [
+        "WorldBeyond.Presentation.Unity",
+        "WorldBeyond.Simulation.Core",
+        "WorldBeyond.Simulation.Persistence",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": ["Editor"],
+    "autoReferenced": false
+}

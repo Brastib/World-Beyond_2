@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Kompiliert dieselben Quelldateien wie Unity (Assets/...), damit Assembly-Grenzen auch ohne Unity geprüft werden. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/WorldBeyond/Simulation/Persistence/**/*.cs" />
+    <ProjectReference Include="../WorldBeyond.Simulation.Core/WorldBeyond.Simulation.Core.csproj" />
+  </ItemGroup>
+</Project>
