@@ -10,6 +10,8 @@ namespace WorldBeyond.Simulation.Systems
         public const int RoadRadius = 16;
         public const int MaxRoadLength = 40;
         public const int RoadStoneCostPerCell = 1;
+        /// <summary>Arbeitsstunden je Straßenfeld (Baumeister/Träger, ADR-014).</summary>
+        public const byte RoadLaborPerCell = 3;
 
         public static string CheckBuildingCell(WorldState w, int civId, int cell)
         {
@@ -18,7 +20,7 @@ namespace WorldBeyond.Simulation.Systems
             if (m.Biomes[cell] != Biome.Wiese) return $"Bauen nur auf Wiese möglich (hier: {m.Biomes[cell]}).";
             if (m.Resource[cell] != NaturalResource.Keine) return $"Zelle ist nicht frei ({m.Resource[cell]}).";
             if (m.BuildingAt[cell] != 0) return "Hier steht bereits ein Gebäude.";
-            if (m.Road[cell]) return "Auf einer Straße kann nicht gebaut werden.";
+            if (m.Road[cell] || m.RoadWork[cell] > 0) return "Auf einer (geplanten) Straße kann nicht gebaut werden.";
             var s = Economy.NearestSettlementOfCiv(w, civId, cell);
             if (s == null) return "Diese Zivilisation hat keine Siedlung.";
             if (m.Manhattan(s.CenterCell, cell) > BuildRadius) return $"Zu weit von {s.Name} entfernt (max. {BuildRadius} Felder).";
@@ -51,9 +53,9 @@ namespace WorldBeyond.Simulation.Systems
             foreach (var c in cells)
             {
                 if (!m.IsWalkable(c)) return $"Straße kreuzt unbegehbares Gelände ({m.Biomes[c]}) bei {m.X(c)},{m.Y(c)}.";
-                if (!m.Road[c] && m.BuildingAt[c] == 0) newCells.Add(c);
+                if (!m.Road[c] && m.RoadWork[c] == 0 && m.BuildingAt[c] == 0) newCells.Add(c);
             }
-            if (newCells.Count == 0) return "Hier liegt schon überall Straße.";
+            if (newCells.Count == 0) return "Hier liegt oder ist schon überall Straße geplant.";
             return null;
         }
     }

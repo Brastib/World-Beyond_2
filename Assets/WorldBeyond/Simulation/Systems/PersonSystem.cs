@@ -82,7 +82,10 @@ namespace WorldBeyond.Simulation.Systems
             {
                 case Role.Kind: SetIdle(p, RetryCooldown); return;
                 case Role.Baumeister:
-                    if (TryBuild(sim, p) || TryHaul(sim, p)) return;
+                    if (TryBuild(sim, p) || TryRoad(sim, p) || TryHaul(sim, p)) return;
+                    break;
+                case Role.Bauer:
+                    if (TryFarm(sim, p)) return;
                     break;
                 case Role.Traeger:
                     if (TryHaul(sim, p) || TryBuild(sim, p)) return;
@@ -95,6 +98,8 @@ namespace WorldBeyond.Simulation.Systems
             }
             if (TryHaul(sim, p)) return;
             if (TryBuild(sim, p)) return;
+            if (TryRoad(sim, p)) return;
+            if (TryFarm(sim, p)) return;
             if (TryGather(sim, p, -1)) return;
             SetIdle(p, RetryCooldown / 2);
         }
@@ -161,6 +166,72 @@ namespace WorldBeyond.Simulation.Systems
             return false;
         }
 
+        static bool TryRoad(WorldSimulation sim, Person p)
+        {
+            var w = sim.World; var m = w.Map;
+            var s = w.SettlementById(p.SettlementId);
+            int best = -1, bestD = int.MaxValue;
+            int cx = m.X(s.CenterCell), cy = m.Y(s.CenterCell), r = BuildRules.RoadRadius;
+            for (int y = Math.Max(0, cy - r); y <= Math.Min(m.Height - 1, cy + r); y++)
+                for (int x = Math.Max(0, cx - r); x <= Math.Min(m.Width - 1, cx + r); x++)
+                {
+                    int i = m.Index(x, y);
+                    if (m.RoadWork[i] == 0) continue;
+                    int d = m.Manhattan(p.Cell, i);
+                    if (d >= bestD) continue;
+                    bool taken = false;
+                    foreach (var o in w.People) if (o.Task == PersonTask.StrasseBauen && o.TargetCell == i) { taken = true; break; }
+                    if (!taken) { bestD = d; best = i; }
+                }
+            if (best < 0 || !GoTo(sim, p, best)) return false;
+            p.Task = PersonTask.StrasseBauen; p.TargetBuildingId = 0;
+            return true;
+        }
+
+        /// <summary>Wachstum, das ein Feld zum aktuellen Zeitpunkt der Wachstumsperiode (Frühling+Sommer) höchstens haben darf.</summary>
+        public static int AllowedGrowth(WorldState w, BuildingDef def)
+        {
+            var season = Calendar.SeasonOf(w.Tick);
+            if (season != Season.Fruehling && season != Season.Sommer) return 0;
+            int dayOfSeason = (int)(Calendar.Day(w.Tick) % Calendar.DaysPerYear); // Frühling beginnt bei Tag 0
+            return def.FieldCapacity * (dayOfSeason + 1) / (Calendar.DaysPerYear / 2);
+        }
+
+        public static bool IsGrowingSeason(WorldState w)
+        {
+            var season = Calendar.SeasonOf(w.Tick);
+            return season == Season.Fruehling || season == Season.Sommer;
+        }
+
+        static bool TryFarm(WorldSimulation sim, Person p)
+        {
+            var w = sim.World;
+            bool growing = IsGrowingSeason(w);
+            if (!growing)
+            {
+                int free = 0;
+                foreach (var b in Economy.Storages(w, sim.Content, p.SettlementId)) free += Economy.FreeCapacity(b, sim.Content);
+                if (free <= 0) return false;
+            }
+            Building best = null; int bestD = int.MaxValue;
+            foreach (var f in w.Buildings)
+            {
+                if (!f.Complete || f.SettlementId != p.SettlementId) continue;
+                var def = sim.Content.Building(f.DefId);
+                if (def.FieldCapacity <= 0) continue;
+                bool work = growing ? f.FieldGrowth < Math.Min(def.FieldCapacity, AllowedGrowth(w, def)) : f.FieldGrowth >= 2;
+                if (!work) continue;
+                int workers = 0;
+                foreach (var o in w.People) if (o.Task == PersonTask.Feldarbeit && o.TargetBuildingId == f.Id) workers++;
+                if (workers >= def.Workers) continue;
+                int d = w.Map.Manhattan(p.Cell, f.Cell);
+                if (d < bestD) { bestD = d; best = f; }
+            }
+            if (best == null || !GoTo(sim, p, best.Cell)) return false;
+            p.Task = PersonTask.Feldarbeit; p.TargetBuildingId = best.Id;
+            return true;
+        }
+
         static bool TryGather(WorldSimulation sim, Person p, int only)
         {
             var w = sim.World;
@@ -199,6 +270,15 @@ namespace WorldBeyond.Simulation.Systems
                     if (d < bestD) { bestD = d; best = i; }
                 }
             return best;
+        }
+
+        public static int OpenRoadWork(WorldMap m, Settlement s)
+        {
+            int n = 0, cx = m.X(s.CenterCell), cy = m.Y(s.CenterCell), r = BuildRules.RoadRadius;
+            for (int y = Math.Max(0, cy - r); y <= Math.Min(m.Height - 1, cy + r); y++)
+                for (int x = Math.Max(0, cx - r); x <= Math.Min(m.Width - 1, cx + r); x++)
+                    if (m.RoadWork[m.Index(x, y)] > 0) n++;
+            return n;
         }
 
         static void Arrive(WorldSimulation sim, Person p)
@@ -259,6 +339,41 @@ namespace WorldBeyond.Simulation.Systems
                     site.Incoming[r] -= p.CarryAmount;
                     p.CarryAmount = 0;
                     SetIdle(p, 0);
+                    break;
+                }
+                case PersonTask.StrasseBauen:
+                {
+                    int c = p.Cell;
+                    if (m.RoadWork[c] == 0) { SetIdle(p, 0); break; }
+                    m.RoadWork[c]--;
+                    if (m.RoadWork[c] == 0)
+                    {
+                        m.Road[c] = true;
+                        var s = w.SettlementById(p.SettlementId);
+                        if (OpenRoadWork(m, s) == 0) w.AddLog("Bau", $"{s.Name}: alle geplanten Straßenfelder sind fertig.");
+                        SetIdle(p, 0);
+                    }
+                    break;
+                }
+                case PersonTask.Feldarbeit:
+                {
+                    var f = w.BuildingById(p.TargetBuildingId);
+                    var def = sim.Content.Building(f.DefId);
+                    if (IsGrowingSeason(w))
+                    {
+                        if (f.FieldGrowth < Math.Min(def.FieldCapacity, AllowedGrowth(w, def))) f.FieldGrowth++;
+                        else SetIdle(p, 0);
+                        break;
+                    }
+                    if (f.FieldGrowth >= 2 && p.CarryAmount < CarryMax)
+                    {
+                        f.FieldGrowth -= 2;
+                        p.CarryType = ResourceType.Nahrung; p.CarryAmount++;
+                    }
+                    if (p.CarryAmount >= CarryMax || f.FieldGrowth < 2)
+                    {
+                        if (p.CarryAmount > 0) StartDeliver(sim, p); else SetIdle(p, 0);
+                    }
                     break;
                 }
                 case PersonTask.Bauen:

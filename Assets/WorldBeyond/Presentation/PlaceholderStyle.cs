@@ -26,6 +26,7 @@ namespace WorldBeyond.Presentation
             { "ortszentrum", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.95f, 1.6f, 0.95f), "Ortszentrum") },
             { "haus", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.75f, 0.7f, 0.75f), "Haus") },
             { "lager", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.95f, 0.5f, 0.95f), "Lager") },
+            { "feld", new PlaceholderSpec(PlaceholderShape.Flaeche, new Vector3(0.98f, 0.06f, 0.98f), "Feld") },
         };
         static readonly PlaceholderSpec UnknownBuilding = new PlaceholderSpec(PlaceholderShape.Quader, Vector3.one * 0.6f, "Unbekannt");
 
@@ -63,6 +64,9 @@ namespace WorldBeyond.Presentation
         }
 
         public static readonly Color32 Road = new Color32(150, 110, 70, 255);
+        public static readonly Color32 PlannedRoad = new Color32(215, 185, 140, 255);
+        public static readonly Color FieldEmpty = new Color(0.45f, 0.32f, 0.18f);
+        public static readonly Color FieldRipe = new Color(0.95f, 0.82f, 0.25f);
         public static readonly Color32 Berries = new Color32(230, 90, 160, 255);
         public static readonly Color32 Trees = new Color32(25, 80, 30, 255);
         public static readonly Color32 Rocks = new Color32(120, 115, 110, 255);

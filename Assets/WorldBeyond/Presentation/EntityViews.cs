@@ -41,7 +41,9 @@ namespace WorldBeyond.Presentation
         }
 
         /// <summary>Nach jedem Simulationstick: Zielpositionen und Gebäudezustand übernehmen.</summary>
-        public void Sync(WorldState w)
+        public void Sync(WorldState w) => Sync(w, null);
+
+        public void Sync(WorldState w, ContentCatalog content)
         {
             var m = w.Map;
             _seen.Clear();
@@ -81,8 +83,15 @@ namespace WorldBeyond.Presentation
                     _buildings[b.Id] = go;
                 }
                 var color = b.Complete ? PlaceholderStyle.Civ(w.Civ(b.CivId).ColorRgb) : PlaceholderStyle.ConstructionSite;
-                go.GetComponent<Renderer>().sharedMaterial = PlaceholderMaterials.ForColor(color);
                 float h = b.Complete ? spec.Scale.y : Mathf.Max(0.1f, spec.Scale.y * 0.25f);
+                if (spec.Shape == PlaceholderShape.Flaeche && b.Complete && content != null)
+                {
+                    // Feld: Farbe von Erde (leer) zu Gold (reif) in 5 Stufen, damit Materialien begrenzt bleiben; Höhe wächst mit.
+                    float t = Mathf.Round(Mathf.Clamp01(b.FieldGrowth / (float)content.Building(b.DefId).FieldCapacity) * 4f) / 4f;
+                    color = Color.Lerp(PlaceholderStyle.FieldEmpty, PlaceholderStyle.FieldRipe, t);
+                    h = spec.Scale.y + t * 0.25f;
+                }
+                go.GetComponent<Renderer>().sharedMaterial = PlaceholderMaterials.ForColor(color);
                 go.transform.localScale = new Vector3(spec.Scale.x, h, spec.Scale.z);
                 go.transform.position = CellCenter(m, b.Cell) + Vector3.up * h * 0.5f;
             }

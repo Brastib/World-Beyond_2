@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased] – M1 Schritt 1: Siedlung wächst
+## [Unreleased] – M1 Schritt 2: Straßenbau und Felder
+- Straßen werden geplant und Feld für Feld von Baumeistern gebaut (hell karierte Vorschau → braune Straße).
+- Neuer Beruf Bauer, neues Gebäude Feld (Taste F): Wachstum im Frühling/Sommer, Ernte ab Herbst, Farbe braun → gold.
+- KI-Dörfer legen selbst Felder an; Inspektor und Statistik zeigen Feldertrag und offene Straßenfelder.
+- Save-Format v3 mit Migration von v2 und Regressionstest.
+
+## M1 Schritt 1: Siedlung wächst
 - Berufe (Sammler, Holzfäller, Bergarbeiter, Baumeister, Träger, Kind) mit täglicher Zuteilung nach Bedarf.
 - Lebenszyklus: Geburt, Auszug in neue Haushalte, Tod durch Alter/Hunger, leere Häuser werden wieder bezogen.
 - KI-Siedlungen bauen bei vollem Lager selbst ein Lager; Nahrungsziel wächst mit der Bevölkerung.

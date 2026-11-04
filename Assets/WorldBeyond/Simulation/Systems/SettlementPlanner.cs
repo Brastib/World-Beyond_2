@@ -16,7 +16,7 @@ namespace WorldBeyond.Simulation.Systems
             var w = sim.World;
             foreach (var s in w.Settlements)
             {
-                if (s.CivId != w.PlayerCivId) PlanStorage(sim, s);
+                if (s.CivId != w.PlayerCivId) { PlanStorage(sim, s); PlanField(sim, s); }
                 string status = Evaluate(sim, s);
                 if (status != s.Status)
                 {
@@ -40,6 +40,28 @@ namespace WorldBeyond.Simulation.Systems
             if (cell < 0) return;
             var site = Construction.PlaceSite(w, c, DefaultContent.Storage, s, cell, 0);
             w.AddLog("Bau", $"{s.Name} beauftragt ein neues Lager #{site.Id}, weil das Lager zu {used * 100 / cap}% voll ist.", site.Id);
+        }
+
+        /// <summary>KI legt Felder an: Ziel 1 Feld je 5 Einwohner (mindestens 1).</summary>
+        static void PlanField(WorldSimulation sim, Settlement s)
+        {
+            var w = sim.World; var c = sim.Content;
+            int pop = 0, fields = 0;
+            foreach (var p in w.People) if (p.SettlementId == s.Id) pop++;
+            foreach (var b in w.Buildings)
+            {
+                if (b.SettlementId != s.Id || b.DefId != DefaultContent.Field) continue;
+                if (!b.Complete) return;
+                fields++;
+            }
+            if (fields >= System.Math.Max(1, pop / 5)) return;
+            var def = c.Building(DefaultContent.Field);
+            for (int r = 0; r < Res.Count; r++)
+                if (def.Cost[r] > 0 && Economy.SettlementAvailable(w, c, s.Id, (ResourceType)r) - Economy.OpenSiteDemand(w, c, s.Id, (ResourceType)r) < def.Cost[r]) return;
+            int cell = DailySystems.FindFreeCell(w, s, 3, BuildRules.BuildRadius);
+            if (cell < 0) return;
+            var site = Construction.PlaceSite(w, c, DefaultContent.Field, s, cell, 0);
+            w.AddLog("Bau", $"{s.Name} legt ein neues Feld #{site.Id} an ({fields} Felder für {pop} Einwohner).", site.Id);
         }
 
         /// <summary>Erste zutreffende Ursache, in Prioritätsreihenfolge. Text ist für Inspektor und Protokoll gedacht.</summary>

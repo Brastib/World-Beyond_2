@@ -23,6 +23,8 @@ namespace WorldBeyond.Simulation.Core
         public readonly NaturalResource[] Resource;
         public readonly short[] ResourceAmount;
         public readonly bool[] Road;
+        /// <summary>Geplante Straße: verbleibende Arbeitsstunden je Zelle, 0 = keine Planung (Save v3).</summary>
+        public readonly byte[] RoadWork;
         /// <summary>Abgeleitet (nicht gespeichert): Gebäude-ID je Zelle, 0 = frei.</summary>
         public readonly int[] BuildingAt;
 
@@ -33,7 +35,7 @@ namespace WorldBeyond.Simulation.Core
             Width = width; Height = height;
             int n = width * height;
             Elevation = new byte[n]; Moisture = new byte[n]; Biomes = new Biome[n];
-            Resource = new NaturalResource[n]; ResourceAmount = new short[n]; Road = new bool[n]; BuildingAt = new int[n];
+            Resource = new NaturalResource[n]; ResourceAmount = new short[n]; Road = new bool[n]; RoadWork = new byte[n]; BuildingAt = new int[n];
         }
 
         public int CellCount => Width * Height;

@@ -26,5 +26,9 @@
 - Nicht geprüft: das neue Statistik-Panel und die Berufsanzeige im echten Spiel (kein manueller Test, kein Screenshot ausgewertet).
 - Die `.meta`-Dateien der neuen Skripte (Jobs, Lifecycle, SettlementPlanner, SaveFixtures, M1Tests) hat Unity auf dem PC erzeugt; sie sind noch nicht im Repo.
 
+## M1 Schritt 2 (Branch m1-strassen-felder) – Stand 2026-11-04
+- `dotnet test`: **33/33 bestanden** (3 neue: v2-Migration, Feldzyklus mit Save/Load in der Saison, KI-Felder; Straßentest auf Bau mit Arbeit umgestellt). Feld des Spielers erreicht zum Herbstbeginn das Maximum 600 und wird danach geerntet.
+- Unity: **noch nicht geprüft** (neue UI: Feld-Knopf/F, Feldfarben, geplante Straßen).
+
 ## Nächster Schritt
 M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen (Pull Request, Entscheidung des Nutzers).

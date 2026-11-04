@@ -62,6 +62,7 @@ namespace WorldBeyond.Presentation
         {
             Color32 c = PlaceholderStyle.BiomeColor(m.Biomes[i], m.Elevation[i]);
             if (m.Road[i]) return PlaceholderStyle.Road;
+            if (m.RoadWork[i] > 0) return ((m.X(i) + m.Y(i)) & 1) == 0 ? PlaceholderStyle.PlannedRoad : Color32.Lerp(c, PlaceholderStyle.PlannedRoad, 0.5f);
             if (Layer == MapLayer.Strassen) return Color32.Lerp(c, new Color32(40, 40, 40, 255), 0.6f);
             if (Layer == MapLayer.Ressourcen && m.ResourceAmount[i] > 0)
             {

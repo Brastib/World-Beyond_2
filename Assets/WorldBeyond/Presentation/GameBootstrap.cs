@@ -7,7 +7,7 @@ using WorldBeyond.Simulation.Systems;
 namespace WorldBeyond.Presentation
 {
     public enum SelectionKind { Keine, Zelle, Person, Gebaeude }
-    public enum ToolMode { Auswahl, LagerBauen, StrasseBauen }
+    public enum ToolMode { Auswahl, LagerBauen, StrasseBauen, FeldBauen }
 
     /// <summary>Einstieg der Szene: baut Session, Ansichten, Kamera und HUD auf und verteilt Eingaben.</summary>
     public sealed class GameBootstrap : MonoBehaviour
@@ -60,7 +60,7 @@ namespace WorldBeyond.Presentation
             var w = Session.World;
             Map.Rebuild(w.Map);
             Entities.Clear();
-            Entities.Sync(w);
+            Entities.Sync(w, Session.Content);
             Entities.Animate(1f);
             Rig.Bounds = new Vector2(w.Map.Width, w.Map.Height);
             int civ = w.PlayerCivId != 0 ? w.PlayerCivId : w.Civilizations[0].Id;
@@ -75,7 +75,7 @@ namespace WorldBeyond.Presentation
             if (n > 0)
             {
                 _sinceTick = 0;
-                Entities.Sync(Session.World);
+                Entities.Sync(Session.World, Session.Content);
                 Map.Refresh(Session.World.Map);
             }
             else _sinceTick += Time.unscaledDeltaTime;
@@ -100,6 +100,7 @@ namespace WorldBeyond.Presentation
             if (InputAdapter.KeyDown(KeyCode.L)) { Map.Layer = (MapLayer)(((int)Map.Layer + 1) % 3); Map.Refresh(Session.World.Map); }
             if (InputAdapter.KeyDown(KeyCode.B)) SetTool(ToolMode.LagerBauen);
             if (InputAdapter.KeyDown(KeyCode.R)) SetTool(ToolMode.StrasseBauen);
+            if (InputAdapter.KeyDown(KeyCode.F)) SetTool(ToolMode.FeldBauen);
             if (InputAdapter.KeyDown(KeyCode.Escape)) SetTool(ToolMode.Auswahl);
         }
 
@@ -134,8 +135,8 @@ namespace WorldBeyond.Presentation
             var w = Session.World;
             HoverCell = HudGui.PointerOverUi ? -1 : CellUnderMouse();
             HoverReason = null;
-            if (Tool == ToolMode.LagerBauen && HoverCell >= 0)
-                HoverReason = Session.Sim.Preview(GameCommand.PlaceBuilding(w.PlayerCivId, DefaultContent.Storage, HoverCell));
+            if ((Tool == ToolMode.LagerBauen || Tool == ToolMode.FeldBauen) && HoverCell >= 0)
+                HoverReason = Session.Sim.Preview(GameCommand.PlaceBuilding(w.PlayerCivId, ToolDef, HoverCell));
             else if (Tool == ToolMode.StrasseBauen && HoverCell >= 0 && RoadStart >= 0)
                 HoverReason = Session.Sim.Preview(GameCommand.PlaceRoad(w.PlayerCivId, RoadStart, HoverCell));
             UpdateGhost();
@@ -151,7 +152,8 @@ namespace WorldBeyond.Presentation
                     else { SelKind = SelectionKind.Keine; }
                     break;
                 case ToolMode.LagerBauen:
-                    if (HoverCell >= 0 && Session.Issue(GameCommand.PlaceBuilding(w.PlayerCivId, DefaultContent.Storage, HoverCell)) == null)
+                case ToolMode.FeldBauen:
+                    if (HoverCell >= 0 && Session.Issue(GameCommand.PlaceBuilding(w.PlayerCivId, ToolDef, HoverCell)) == null)
                         Tool = ToolMode.Auswahl;
                     break;
                 case ToolMode.StrasseBauen:
@@ -161,6 +163,8 @@ namespace WorldBeyond.Presentation
                     break;
             }
         }
+
+        string ToolDef => Tool == ToolMode.FeldBauen ? DefaultContent.Field : DefaultContent.Storage;
 
         void UpdateGhost()
         {
@@ -175,7 +179,7 @@ namespace WorldBeyond.Presentation
             if (!show) return;
             bool valid = Tool == ToolMode.StrasseBauen && RoadStart < 0 ? true : HoverReason == null;
             _ghost.GetComponent<Renderer>().sharedMaterial = PlaceholderMaterials.ForColor(valid ? PlaceholderStyle.ValidPlacement : PlaceholderStyle.InvalidPlacement);
-            float h = Tool == ToolMode.LagerBauen ? 0.5f : 0.08f;
+            float h = Tool == ToolMode.LagerBauen ? 0.5f : 0.08f; // Feld und Straße flach
             _ghost.transform.localScale = new Vector3(0.95f, h, 0.95f);
             _ghost.transform.position = EntityViews.CellCenter(Session.World.Map, HoverCell) + Vector3.up * h * 0.5f;
         }

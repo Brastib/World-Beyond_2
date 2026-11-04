@@ -113,9 +113,13 @@ namespace WorldBeyond.Presentation
             if (GUILayout.Toggle(_g.Tool == ToolMode.LagerBauen, $"Lager bauen (B)\n{lager.Cost[1]} Holz, {lager.Cost[2]} Stein, {lager.Labor} Std. Arbeit", "Button"))
             { if (_g.Tool != ToolMode.LagerBauen) _g.SetTool(ToolMode.LagerBauen); }
             else if (_g.Tool == ToolMode.LagerBauen) _g.SetTool(ToolMode.Auswahl);
-            if (GUILayout.Toggle(_g.Tool == ToolMode.StrasseBauen, $"Straße (R)\n{BuildRules.RoadStoneCostPerCell} Stein pro Feld, sofort", "Button"))
+            if (GUILayout.Toggle(_g.Tool == ToolMode.StrasseBauen, $"Straße (R)\n{BuildRules.RoadStoneCostPerCell} Stein + {BuildRules.RoadLaborPerCell} Std. Arbeit pro Feld", "Button"))
             { if (_g.Tool != ToolMode.StrasseBauen) _g.SetTool(ToolMode.StrasseBauen); }
             else if (_g.Tool == ToolMode.StrasseBauen) _g.SetTool(ToolMode.Auswahl);
+            var feld = s.Content.Building(DefaultContent.Field);
+            if (GUILayout.Toggle(_g.Tool == ToolMode.FeldBauen, $"Feld anlegen (F)\n{feld.Cost[1]} Holz, {feld.Labor} Std. Arbeit, Ernte ab Herbst", "Button"))
+            { if (_g.Tool != ToolMode.FeldBauen) _g.SetTool(ToolMode.FeldBauen); }
+            else if (_g.Tool == ToolMode.FeldBauen) _g.SetTool(ToolMode.Auswahl);
             if (_g.Tool != ToolMode.Auswahl) GUILayout.Label("<i>Linksklick auf Karte, Esc bricht ab.</i>", _small);
 
             GUILayout.Space(8);
@@ -211,6 +215,15 @@ namespace WorldBeyond.Presentation
                         sb.AppendLine($"Arbeit offen: {b.LaborRemaining} Std.");
                         sb.AppendLine(Construction.MaterialsComplete(b, def) ? "→ wartet auf Bauarbeiter" : "→ wartet auf Material aus dem Lager");
                     }
+                    if (def.FieldCapacity > 0 && b.Complete)
+                    {
+                        int allowed = System.Math.Min(def.FieldCapacity, PersonSystem.AllowedGrowth(w, def));
+                        int workers = w.People.Count(p => p.Task == PersonTask.Feldarbeit && p.TargetBuildingId == b.Id);
+                        sb.AppendLine($"Wachstum {b.FieldGrowth}/{def.FieldCapacity} → Ertrag {b.FieldGrowth / 2} Nahrung · Bauern am Feld {workers}/{def.Workers}");
+                        sb.AppendLine(PersonSystem.IsGrowingSeason(w)
+                            ? (b.FieldGrowth < allowed ? "Wächst – braucht Bauern." : "Wächst planmäßig (Soll erreicht).")
+                            : (b.FieldGrowth >= 2 ? "Erntezeit: Bauern bringen Nahrung ins Lager." : "Abgeerntet, ruht bis zum Frühling."));
+                    }
                     if (def.StorageCapacity > 0)
                         sb.AppendLine($"Lager: {Vec(b.Stock)} ({Res.Sum(b.Stock)}/{def.StorageCapacity}), reserviert {Vec(b.Reserved)}");
                     if (b.OwnerHouseholdId != 0) sb.AppendLine("Besitzer: " + w.HouseholdById(b.OwnerHouseholdId).Name);
@@ -224,7 +237,7 @@ namespace WorldBeyond.Presentation
                     sb.AppendLine($"<b>Zelle {m.X(c)},{m.Y(c)}</b> (Chunk {m.X(c) / WorldMap.ChunkSize},{m.Y(c) / WorldMap.ChunkSize})");
                     sb.AppendLine($"Biom: {m.Biomes[c]} · Höhe {m.Elevation[c]} · Feuchte {m.Moisture[c]}");
                     sb.AppendLine($"Ressource: {m.Resource[c]} {(m.ResourceAmount[c] > 0 ? m.ResourceAmount[c].ToString() : "")}");
-                    sb.AppendLine($"Straße: {(m.Road[c] ? "ja" : "nein")} · Bewegungskosten: {(m.IsWalkable(c) ? m.MoveCost(c).ToString() : "unbegehbar")}");
+                    sb.AppendLine($"Straße: {(m.Road[c] ? "ja" : m.RoadWork[c] > 0 ? "geplant, noch " + m.RoadWork[c] + " Std. Arbeit" : "nein")} · Bewegungskosten: {(m.IsWalkable(c) ? m.MoveCost(c).ToString() : "unbegehbar")}");
                     string reason = w.PlayerCivId != 0 ? BuildRules.CheckBuildingCell(w, w.PlayerCivId, c) : "Beobachtermodus";
                     sb.AppendLine("Bebaubar: " + (reason == null ? "ja" : "nein – " + reason));
                     break;
@@ -250,6 +263,8 @@ namespace WorldBeyond.Presentation
                 case PersonTask.MaterialHolen: return $" ({p.HaulAmount} {p.TaskResource} aus #{p.TargetBuildingId} für Baustelle #{p.HaulSiteId})";
                 case PersonTask.MaterialBringen: return $" (zu Baustelle #{p.TargetBuildingId})";
                 case PersonTask.Bauen: return $" (an #{p.TargetBuildingId})";
+                case PersonTask.StrasseBauen: return $" (Straßenfeld {w.Map.X(p.TargetCell)},{w.Map.Y(p.TargetCell)})";
+                case PersonTask.Feldarbeit: return $" (Feld #{p.TargetBuildingId}, {(PersonSystem.IsGrowingSeason(w) ? "bestellen" : "ernten")})";
                 default: return p.Cooldown > 0 ? $" (wartet {p.Cooldown} Std.)" : "";
             }
         }
@@ -282,6 +297,8 @@ namespace WorldBeyond.Presentation
                 var hh = w.Households.Where(h => h.SettlementId == s.Id).ToList();
                 int houses = w.Buildings.Count(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.House);
                 int storages = w.Buildings.Count(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.Storage);
+                var fields = w.Buildings.Where(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.Field).ToList();
+                int roadWork = PersonSystem.OpenRoadWork(w.Map, s);
                 var stock = Economy.SettlementStock(w, content, s.Id);
                 var roles = string.Join(", ", System.Enum.GetValues(typeof(Role)).Cast<Role>()
                     .Select(ro => new { ro, n = people.Count(p => p.Role == ro) }).Where(x => x.n > 0).Select(x => $"{Jobs.RoleName(x.ro)} {x.n}"));
@@ -290,6 +307,7 @@ namespace WorldBeyond.Presentation
                 sb.AppendLine($"Einwohner {people.Count} (Kinder {people.Count(p => !p.IsAdult)}) · Haushalte {hh.Count} (ohne Haus {hh.Count(h => h.HomeBuildingId == 0)}) · Häuser {houses} · Lagerorte {storages + 1} (inkl. Ortszentrum)");
                 sb.AppendLine($"Bestand: {Vec(stock)} · Geburten {s.Births} · Tode {s.Deaths}");
                 sb.AppendLine("Berufe: " + roles);
+                sb.AppendLine($"Felder {fields.Count} (erwarteter Ertrag {fields.Sum(f => f.FieldGrowth) / 2} Nahrung) · offene Straßenfelder {roadWork}");
                 sb.AppendLine("Lage: " + s.Status);
             }
             GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, r.height - 12), sb.ToString(), _small);
@@ -329,11 +347,11 @@ namespace WorldBeyond.Presentation
             GUI.Label(new Rect(r.x + 10, r.y + 8, r.width - 20, r.height - 16),
                 "<b>Steuerung</b>\n" +
                 "WASD/Pfeile: Kamera schwenken · Q/E oder rechte Maustaste: drehen · Mausrad: zoomen · mittlere Maustaste: ziehen\n" +
-                "Linksklick: auswählen · B: Lager bauen · R: Straße (Start, dann Ende klicken) · Esc: abbrechen\n" +
+                "Linksklick: auswählen · B: Lager bauen · F: Feld anlegen · R: Straße (Start, dann Ende klicken) · Esc: abbrechen\n" +
                 "Leertaste: Pause · 1–4: Tempo 1×/2×/4×/8× · L: Kartenebene · T: Statistik · F5/F9: Schnell speichern/laden · F3: Debug · F12: Screenshot\n\n" +
                 "<b>Platzhalter</b>\nKugel = Person (Farbe = Nation, kleine Kugel = Kind), kleiner Würfel darüber = Traglast (rosa Nahrung, braun Holz, grau Stein)\n" +
                 "Quader = Gebäude (hoch: Ortszentrum, mittel: Haus, flach: Lager), grau und flach = Baustelle\n" +
-                "Rosa Felder = Beeren, dunkelgrün = Bäume, grau = Felsen, braun = Straße", _small);
+                "Flache Platte = Feld (braun leer → gold reif)\nRosa Felder = Beeren, dunkelgrün = Bäume, grau = Felsen, braun = Straße, hell kariert = geplante Straße", _small);
         }
     }
 }

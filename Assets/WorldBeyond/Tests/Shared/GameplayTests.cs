@@ -85,13 +85,19 @@ namespace WorldBeyond.Tests
                     if (w.Map.InBounds(x + sx, y) && sim.Preview(GameCommand.PlaceRoad(w.PlayerCivId, s.CenterCell, w.Map.Index(x + sx, y))) == null)
                     { to = w.Map.Index(x + sx, y); break; }
             Assert.GreaterOrEqual(to, 0, "Keine gültige Teststraße");
+            int oldCost = w.Map.MoveCost(to);
             sim.Submit(GameCommand.PlaceRoad(w.PlayerCivId, s.CenterCell, to));
             sim.Step();
             Assert.IsTrue(w.CommandHistory[0].Succeeded, w.CommandHistory[0].Result);
-            int built = BuildRules.RoadCells(w.Map, s.CenterCell, to).Count(c => w.Map.Road[c]);
-            Assert.Greater(built, 0);
-            Assert.AreEqual(before - built, Economy.SettlementAvailable(w, sim.Content, s.Id, ResourceType.Stein) + Reserved(sim, s.Id));
+            var cells = BuildRules.RoadCells(w.Map, s.CenterCell, to);
+            int planned = cells.Count(c => w.Map.RoadWork[c] > 0);
+            Assert.Greater(planned, 0);
+            Assert.AreEqual(before - planned, Economy.SettlementAvailable(w, sim.Content, s.Id, ResourceType.Stein) + Reserved(sim, s.Id), "Stein wird bei Auftrag bezahlt");
+            Assert.AreEqual(oldCost, w.Map.MoveCost(to), "Straße entsteht nicht sofort");
+            sim.Run(24 * 10);
+            Assert.That(cells.All(c => w.Map.RoadWork[c] == 0), "Nach 10 Tagen sind alle Felder gebaut");
             Assert.AreEqual(1, w.Map.MoveCost(to));
+            Assert.That(w.Log.Any(l => l.Text.Contains("Straßenfelder sind fertig")));
         }
 
         static int Reserved(WorldSimulation sim, int sid) =>

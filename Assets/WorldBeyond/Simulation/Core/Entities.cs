@@ -39,9 +39,9 @@ namespace WorldBeyond.Simulation.Core
     }
 
     /// <summary>Beruf (Save v2). Kind = unter <see cref="Person.AdultAgeDays"/>, arbeitet nicht. Werte nur anhängen.</summary>
-    public enum Role : byte { Sammler, Holzfaeller, Bergarbeiter, Baumeister, Traeger, Kind }
+    public enum Role : byte { Sammler, Holzfaeller, Bergarbeiter, Baumeister, Traeger, Kind, Bauer }
 
-    public enum PersonTask : byte { Leerlauf, Sammeln, Abliefern, MaterialHolen, MaterialBringen, Bauen }
+    public enum PersonTask : byte { Leerlauf, Sammeln, Abliefern, MaterialHolen, MaterialBringen, Bauen, StrasseBauen, Feldarbeit }
 
     public sealed class Person : IEntity
     {
@@ -88,6 +88,8 @@ namespace WorldBeyond.Simulation.Core
         /// <summary>Zustand 0..100 (Verfall/Reparatur ab M1, Feld existiert ab M0).</summary>
         public int Condition = 100;
         public int OwnerHouseholdId;
+        /// <summary>Feld: angesammeltes Wachstum (Save v3). Ernte wandelt 2 Wachstum in 1 Nahrung.</summary>
+        public int FieldGrowth;
         public int[] Delivered = Res.Empty();
         /// <summary>Material, das Träger gerade zur Baustelle bringen.</summary>
         public int[] Incoming = Res.Empty();

@@ -35,6 +35,50 @@ namespace WorldBeyond.Tests
         }
 
         [Test]
+        public void V2Save_IsMigrated_AndKeepsRunning()
+        {
+            var w = SaveCodec.Decode(Unzip(SaveFixtures.V2), out var header);
+            Assert.AreEqual(2, header.FormatVersion);
+            Assert.That(w.Map.RoadWork.All(x => x == 0), "v2 → v3: keine geplanten Straßen");
+            Assert.That(w.Buildings.All(b => b.FieldGrowth == 0));
+            var sim = new WorldSimulation(w, DefaultContent.Create());
+            for (int k = 0; k < 10; k++) { sim.Run(100); TestUtil.AssertValid(w); }
+            Assert.AreEqual(SaveCodec.StateHash(sim.World), SaveCodec.StateHash(TestUtil.Reload(sim).World));
+        }
+
+        [Test]
+        public void Field_GrowsInSpringSummer_HarvestedInAutumn_SaveLoadMidSeason()
+        {
+            var sim = TestUtil.NewSim();
+            var w = sim.World;
+            sim.Submit(GameCommand.PlaceBuilding(w.PlayerCivId, DefaultContent.Field, TestUtil.FindPlayerBuildCell(sim)));
+            sim.Step();
+            Assert.IsTrue(w.CommandHistory[0].Succeeded, w.CommandHistory[0].Result);
+            var field = w.Buildings.Single(b => b.DefId == DefaultContent.Field && b.CivId == w.PlayerCivId);
+            sim.Run(24 * 90);
+            Assert.IsTrue(field.Complete, "Feld nach 90 Tagen angelegt");
+            Assert.Greater(field.FieldGrowth, 0, "Feld wächst im Frühling");
+            sim = TestUtil.Reload(sim); w = sim.World; field = w.BuildingById(field.Id);
+            while (Calendar.SeasonOf(w.Tick) != Season.Herbst) sim.Step();
+            int grown = field.FieldGrowth;
+            TestContext.WriteLine("Wachstum zu Herbstbeginn: " + grown);
+            Assert.Greater(grown, 200);
+            Assert.That(w.People.Any(p => p.Role == Role.Bauer));
+            sim.Run(24 * 30);
+            Assert.Less(field.FieldGrowth, grown, "Im Herbst wird geerntet");
+            TestUtil.AssertValid(w);
+        }
+
+        [Test]
+        public void AiSettlements_PlantFields()
+        {
+            var sim = TestUtil.NewSim();
+            sim.Run(24 * 120);
+            var w = sim.World;
+            Assert.That(w.Buildings.Any(b => b.DefId == DefaultContent.Field && b.CivId != w.PlayerCivId && b.Complete));
+        }
+
+        [Test]
         public void Roles_AreAssignedByNeed_AndRestrictGathering()
         {
             var sim = TestUtil.NewSim();

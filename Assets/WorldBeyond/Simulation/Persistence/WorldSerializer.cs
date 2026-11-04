@@ -24,6 +24,7 @@ namespace WorldBeyond.Simulation.Persistence
                 for (int i = 0; i < m.CellCount; i++) o.Write((byte)m.Resource[i]);
                 for (int i = 0; i < m.CellCount; i++) o.Write(m.ResourceAmount[i]);
                 for (int i = 0; i < m.CellCount; i++) o.Write(m.Road[i]);
+                o.Write(m.RoadWork);
 
                 o.Write(w.Civilizations.Count);
                 foreach (var c in w.Civilizations) { o.Write(c.Id); o.Write(c.Name); o.Write(c.ColorRgb); o.Write(c.CapitalSettlementId); }
@@ -48,7 +49,7 @@ namespace WorldBeyond.Simulation.Persistence
                 foreach (var b in w.Buildings)
                 {
                     o.Write(b.Id); o.Write(b.DefId); o.Write(b.CivId); o.Write(b.SettlementId); o.Write(b.Cell); o.Write(b.Complete);
-                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId);
+                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId); o.Write(b.FieldGrowth);
                     WriteArr(o, b.Delivered); WriteArr(o, b.Incoming); WriteArr(o, b.Stock); WriteArr(o, b.Reserved);
                 }
                 WriteCommands(o, w.PendingCommands);
@@ -75,6 +76,7 @@ namespace WorldBeyond.Simulation.Persistence
                 for (int k = 0; k < n; k++) m.Resource[k] = (NaturalResource)i.ReadByte();
                 for (int k = 0; k < n; k++) m.ResourceAmount[k] = i.ReadInt16();
                 for (int k = 0; k < n; k++) m.Road[k] = i.ReadBoolean();
+                if (formatVersion >= 3) ReadExact(i, m.RoadWork); // v2 → v3: keine geplanten Straßen
 
                 var w = new WorldState(seed, m) { Tick = tick, NextId = nextId, ContentVersion = contentVersion, PlayerCivId = playerCiv };
                 w.Rng.State = rng;
@@ -115,6 +117,7 @@ namespace WorldBeyond.Simulation.Persistence
                         Id = i.ReadInt32(), DefId = i.ReadString(), CivId = i.ReadInt32(), SettlementId = i.ReadInt32(), Cell = i.ReadInt32(),
                         Complete = i.ReadBoolean(), LaborRemaining = i.ReadInt32(), Condition = i.ReadInt32(), OwnerHouseholdId = i.ReadInt32()
                     };
+                    if (formatVersion >= 3) b.FieldGrowth = i.ReadInt32(); // v2 → v3: 0
                     b.Delivered = ReadArr(i); b.Incoming = ReadArr(i); b.Stock = ReadArr(i); b.Reserved = ReadArr(i);
                     w.Buildings.Add(b);
                 }

@@ -16,6 +16,9 @@ namespace WorldBeyond.Simulation.Core
         public int StorageCapacity;
         public int HousingCapacity;
         public bool PlayerBuildable;
+        /// <summary>&gt; 0 = Feld mit diesem maximalen Wachstum; <see cref="Workers"/> Bauern können gleichzeitig arbeiten.</summary>
+        public int FieldCapacity;
+        public int Workers;
         public string Description = "";
     }
 

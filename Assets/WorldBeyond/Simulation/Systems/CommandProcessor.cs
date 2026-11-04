@@ -65,9 +65,9 @@ namespace WorldBeyond.Simulation.Systems
                     w.AddLog("Befehl", "Abgelehnt: " + c.Result);
                     return;
                 }
-                foreach (var cell in cells) w.Map.Road[cell] = true;
-                c.Succeeded = true; c.Result = $"{cells.Count} Straßenfelder gebaut ({cost} Stein).";
-                w.AddLog("Bau", $"{payer.Name}: {cells.Count} Straßenfelder gebaut, {cost} Stein verbraucht.");
+                foreach (var cell in cells) w.Map.RoadWork[cell] = BuildRules.RoadLaborPerCell;
+                c.Succeeded = true; c.Result = $"{cells.Count} Straßenfelder geplant ({cost} Stein, je {BuildRules.RoadLaborPerCell} Std. Arbeit).";
+                w.AddLog("Bau", $"{payer.Name}: {cells.Count} Straßenfelder geplant, {cost} Stein verbraucht. Baumeister bauen sie Feld für Feld.");
             }
         }
     }

@@ -12,6 +12,7 @@ namespace WorldBeyond.Content
         public const string TownCenter = "ortszentrum";
         public const string House = "haus";
         public const string Storage = "lager";
+        public const string Field = "feld";
 
         public static ContentCatalog Create()
         {
@@ -33,6 +34,14 @@ namespace WorldBeyond.Content
                 Id = Storage, Name = "Lager", Category = BuildingCategory.Lager,
                 Cost = new[] { 0, 15, 5 }, Labor = 16, StorageCapacity = 200, HousingCapacity = 0,
                 PlayerBuildable = true, Description = "Öffentliches Lager. Sammler liefern an das nächste Lager mit freiem Platz."
+            });
+
+            c.Buildings.Add(new BuildingDef
+            {
+                Id = Field, Name = "Feld", Category = BuildingCategory.Nahrung,
+                Cost = new[] { 0, 10, 0 }, Labor = 12, StorageCapacity = 0, HousingCapacity = 0,
+                PlayerBuildable = true, FieldCapacity = 600, Workers = 2,
+                Description = "Bauern bestellen es im Frühling und Sommer und ernten ab dem Herbst (2 Wachstum = 1 Nahrung)."
             });
 
             string[] epochs = { "Frühzeit", "Antike", "Mittelalter", "Industrie", "Moderne", "Nahe Zukunft", "Raumfahrt", "Planeten", "Galaxie" };

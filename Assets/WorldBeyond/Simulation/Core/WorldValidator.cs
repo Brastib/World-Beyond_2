@@ -58,9 +58,12 @@ namespace WorldBeyond.Simulation.Core
                 if (p.PathPos < 0 || p.PathPos > p.Path.Count) e.Add($"Person {p.Id}: Pfadposition ungültig");
                 if (p.TargetBuildingId != 0 && w.BuildingById(p.TargetBuildingId) == null) e.Add($"Person {p.Id}: Zielgebäude fehlt");
             }
+            for (int c = 0; c < w.Map.CellCount; c++)
+                if (w.Map.RoadWork[c] > 0 && (w.Map.Road[c] || !w.Map.IsWalkable(c))) { e.Add($"Zelle {c}: Straßenplanung auf Straße/unbegehbar"); break; }
             foreach (var b in w.Buildings)
             {
                 Id(b, "Gebäude");
+                if (b.FieldGrowth < 0) e.Add($"Gebäude {b.Id}: negatives Feldwachstum");
                 if (w.SettlementById(b.SettlementId) == null) e.Add($"Gebäude {b.Id}: Siedlung fehlt");
                 if (!w.Map.InBounds(b.Cell)) e.Add($"Gebäude {b.Id}: außerhalb");
                 else if (w.Map.BuildingAt[b.Cell] != b.Id) e.Add($"Gebäude {b.Id}: Kartenbelegung inkonsistent");
