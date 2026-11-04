@@ -19,7 +19,18 @@ namespace WorldBeyond.Simulation.Core
         /// <summary>&gt; 0 = Feld mit diesem maximalen Wachstum; <see cref="Workers"/> Bauern können gleichzeitig arbeiten.</summary>
         public int FieldCapacity;
         public int Workers;
+        /// <summary>Werkstatt-Rezept (null = keins): Eingang aus dem Lager, Arbeitsstunden, Ausgang.</summary>
+        public RecipeDef Recipe;
         public string Description = "";
+    }
+
+    /// <summary>Produktionsschritt: <see cref="Input"/> wird verbraucht, nach <see cref="Labor"/> Arbeitsstunden entsteht <see cref="OutputAmount"/> × <see cref="Output"/>.</summary>
+    public sealed class RecipeDef
+    {
+        public int[] Input = Res.Empty();
+        public int Labor;
+        public ResourceType Output;
+        public int OutputAmount = 1;
     }
 
     public sealed class EpochDef
@@ -61,6 +72,12 @@ namespace WorldBeyond.Simulation.Core
                 if (b.Cost == null || b.Cost.Length != Res.Count) errors.Add(b.Id + ": Kostenvektor ungültig");
                 else foreach (var c in b.Cost) if (c < 0) errors.Add(b.Id + ": negative Kosten");
                 if (b.Labor < 0 || b.StorageCapacity < 0 || b.HousingCapacity < 0) errors.Add(b.Id + ": negative Werte");
+                if (b.Recipe != null)
+                {
+                    if (b.Recipe.Input == null || b.Recipe.Input.Length != Res.Count) errors.Add(b.Id + ": Rezept-Eingang ungültig");
+                    else foreach (var c in b.Recipe.Input) if (c < 0) errors.Add(b.Id + ": negativer Rezept-Eingang");
+                    if (b.Recipe.Labor <= 0 || b.Recipe.OutputAmount <= 0 || b.Workers <= 0) errors.Add(b.Id + ": Rezept braucht Arbeit, Ertrag und Arbeitsplätze");
+                }
             }
             var orders = new HashSet<int>();
             foreach (var e in Epochs) if (!orders.Add(e.Order)) errors.Add("Doppelte Epochen-Reihenfolge " + e.Order);

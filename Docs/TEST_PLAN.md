@@ -10,6 +10,7 @@ Quelle: `Assets/WorldBeyond/Tests/Shared` (laufen auch als Unity-EditMode-Tests)
 | Gameplay M0 | Startzustand, Haushalt sammelt/baut/bezieht Haus, Spieler-Lager wird fertig, ungültige Befehle mit Grund, Straße kostet Stein und beschleunigt, Beobachtermodus |
 | M1 | `V1Save_IsMigrated_AndKeepsRunning`, `Roles_AreAssignedByNeed_…`, `Population_GrowsOverYears_…` (3 Jahre, keine Siedlung stirbt aus), `AiSettlement_BuildsStorage_WhenFull`, `RemovingHauler_ReleasesReservations`, `LastMemberDies_…` |
 | M1 Schritt 2 | `V2Save_IsMigrated_…`, `Road_CostsStone_AndIsFasterToWalk` (Straße entsteht erst durch Arbeit), `Field_GrowsInSpringSummer_HarvestedInAutumn_SaveLoadMidSeason`, `AiSettlements_PlantFields` |
+| M1 Schritt 4 | `V4Save_IsMigrated_…`, `Workshop_TurnsWoodAndStoneIntoTools_…`, `Tools_DoubleWork_AndWearOut`, `SaveDuringCraft_LoadsAndContinuesIdentically`, `AiSettlements_BuildWorkshop_AndProduceTools` |
 | Invarianten | `ManySeeds_…` (20 Seeds × 600 Ticks), `LongRun_…` (120 Tage), `OneYear_ReportAndBasicHealth`: keine negativen Mengen, keine doppelten Ids, Reservierung = laufende Abholungen, Zulauf = Träger unterwegs, keine kaputten Referenzen |
 
 ## Unity — `Tools\run-unity-tests.ps1` (nur Windows-PC des Nutzers)
@@ -47,3 +48,10 @@ Quelle: `Assets/WorldBeyond/Tests/Shared` (laufen auch als Unity-EditMode-Tests)
 2. Zwei Felder (F) setzen, das zweite auswählen, „Vorrang geben (P)“ drücken: Träger und Baumeister gehen zuerst dorthin; Inspektor zeigt „Priorität: Vorrang“.
 3. Statistik (T): nach dem ersten Monatswechsel erscheinen Balken (Einwohner) und weiße Punkte (Ø Zufriedenheit).
 4. Speichern, Laden: Vorrang, Zufriedenheit und Verlauf sind noch da.
+
+## Manuelle M1-Prüfung (Schritt 4)
+1. Links „Werkstatt (H)“ wählen und neben dem Ortszentrum setzen (20 Holz, 10 Stein). Nach dem Bau erscheint ein hoher schmaler Quader.
+2. Werkstatt anklicken: Inspektor zeigt Rezept „0/2/1/0 → 1 Werkzeug in 6 Std.“, danach „Werkstück: X/6 Std.“, sobald ein Handwerker arbeitet.
+3. Oben in der Ressourcenleiste steigt „Werkzeug“ (hellblau). Statistik (T) zeigt den Beruf Handwerker.
+4. Einen Holzfäller anklicken: „Werkzeug: noch N Einsätze (doppelte Leistung)“, die Zahl sinkt beim Arbeiten.
+5. Mitten im Werkstück speichern, laden: Werkstück-Stunden und Werkzeug-Einsätze stimmen noch.

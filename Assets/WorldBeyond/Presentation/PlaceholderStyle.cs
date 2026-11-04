@@ -27,6 +27,7 @@ namespace WorldBeyond.Presentation
             { "haus", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.75f, 0.7f, 0.75f), "Haus") },
             { "lager", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.95f, 0.5f, 0.95f), "Lager") },
             { "feld", new PlaceholderSpec(PlaceholderShape.Flaeche, new Vector3(0.98f, 0.06f, 0.98f), "Feld") },
+            { "werkstatt", new PlaceholderSpec(PlaceholderShape.Quader, new Vector3(0.6f, 1.0f, 0.95f), "Werkstatt") },
         };
         static readonly PlaceholderSpec UnknownBuilding = new PlaceholderSpec(PlaceholderShape.Quader, Vector3.one * 0.6f, "Unbekannt");
 
@@ -44,6 +45,7 @@ namespace WorldBeyond.Presentation
             {
                 case ResourceType.Nahrung: return new Color(0.95f, 0.45f, 0.65f);
                 case ResourceType.Holz: return new Color(0.55f, 0.35f, 0.15f);
+                case ResourceType.Werkzeug: return new Color(0.30f, 0.75f, 0.95f);
                 default: return new Color(0.6f, 0.6f, 0.65f);
             }
         }

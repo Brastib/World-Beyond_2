@@ -48,9 +48,9 @@ namespace WorldBeyond.Simulation.Core
     }
 
     /// <summary>Beruf (Save v2). Kind = unter <see cref="Person.AdultAgeDays"/>, arbeitet nicht. Werte nur anhängen.</summary>
-    public enum Role : byte { Sammler, Holzfaeller, Bergarbeiter, Baumeister, Traeger, Kind, Bauer }
+    public enum Role : byte { Sammler, Holzfaeller, Bergarbeiter, Baumeister, Traeger, Kind, Bauer, Handwerker }
 
-    public enum PersonTask : byte { Leerlauf, Sammeln, Abliefern, MaterialHolen, MaterialBringen, Bauen, StrasseBauen, Feldarbeit }
+    public enum PersonTask : byte { Leerlauf, Sammeln, Abliefern, MaterialHolen, MaterialBringen, Bauen, StrasseBauen, Feldarbeit, RohstoffHolen, Handwerk }
 
     public sealed class Person : IEntity
     {
@@ -85,6 +85,8 @@ namespace WorldBeyond.Simulation.Core
         public int PathPos;
         /// <summary>Lebenslauf-Zähler (historisch relevante Ereignisse kommen ins Ereignisprotokoll).</summary>
         public int TotalGathered;
+        /// <summary>Restliche Einsätze des mitgeführten Werkzeugs, 0 = keins (Save v5).</summary>
+        public int ToolUses;
     }
 
     public sealed class Building : IEntity
@@ -103,6 +105,8 @@ namespace WorldBeyond.Simulation.Core
         public int FieldGrowth;
         /// <summary>Spielerpriorität: Baustellen mit Vorrang werden zuerst beliefert und gebaut (Save v4).</summary>
         public bool HighPriority;
+        /// <summary>Werkstatt: geleistete Arbeitsstunden am aktuellen Werkstück (Save v5). Der Rezept-Eingang liegt dann in <see cref="Stock"/>.</summary>
+        public int CraftProgress;
         public int[] Delivered = Res.Empty();
         /// <summary>Material, das Träger gerade zur Baustelle bringen.</summary>
         public int[] Incoming = Res.Empty();

@@ -52,7 +52,7 @@ namespace WorldBeyond.Tests
             var storage = w.Buildings.Single(b => b.DefId == DefaultContent.Storage);
             sim.Run(Calendar.TicksPerDay * 30);
             Assert.IsTrue(storage.Complete, "Lager nach 30 Tagen nicht fertig. Arbeit übrig: " + storage.LaborRemaining);
-            CollectionAssert.AreEqual(new[] { 0, 15, 5 }, storage.Delivered);
+            CollectionAssert.AreEqual(new[] { 0, 15, 5, 0 }, storage.Delivered);
         }
 
         [Test]

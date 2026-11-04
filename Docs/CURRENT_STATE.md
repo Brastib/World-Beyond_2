@@ -34,5 +34,10 @@
 - `dotnet test`: **39/39 bestanden** (6 neue: v3-Migration, Zielwert mit Gründen und 5-Punkte-Schritt, Unzufriedenheit verhindert Geburten, Unzufriedenheit bremst Arbeit, Vorrang-Baustelle zuerst fertig plus Replay und Ablehnungen, Monatsverlauf mit Obergrenze und Save/Load). Szenario Seed 12345: Ø Zufriedenheit im ersten Jahr 75–80.
 - Unity: **noch nicht geprüft**. Die neue Anzeige (Zufriedenheit im Inspektor, Vorrang-Knopf, Verlaufsdiagramm) wurde nur geschrieben, nicht in Unity kompiliert.
 
+## M1 Schritt 4 (Branch claude/project-thread-0zbl5x, baut auf m1-zufriedenheit auf) – Stand 2026-11-04
+- `dotnet test`: **44/44 bestanden** (5 neue: v4-Migration mit echter v4-Datei, Werkstatt macht Werkzeug ohne Waren zu erzeugen, Werkzeug verdoppelt Arbeit und nutzt sich ab, Speichern mitten im Werkstück, KI baut Werkstatt). Seed 12345 nach 2 Jahren: beide KI-Dörfer haben eine Werkstatt und 5–6 Werkzeug auf Lager.
+- Unity: **noch nicht geprüft** (neuer Knopf/Taste H, Werkstatt-Quader, Inspektortexte).
+- Beobachtung (gilt schon für Schritt 3, gleicher Verlauf mit altem Code gemessen): Seed 12345 wächst von 6 auf 8 → 10 → 10 Einwohner je Dorf in 3 Jahren, der Lagetext sagt aber „Wächst“. Ursache vermutlich: volle Haushalte (2 Erwachsene + 2 Kinder) dürfen erst wieder wachsen, wenn Kinder mit 14 erwachsen sind. Der Lagetext erklärt das nicht → muss vor der M1-Abnahme korrigiert werden.
+
 ## Nächster Schritt
 M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen (Pull Request, Entscheidung des Nutzers).

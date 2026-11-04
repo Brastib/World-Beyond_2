@@ -10,7 +10,7 @@ namespace WorldBeyond.Simulation.Systems
     {
         public const int HouseholdsPerSettlement = 2;
         public const int PeoplePerHousehold = 3;
-        static readonly int[] StartStock = { 60, 30, 10 };
+        static readonly int[] StartStock = { 60, 30, 10, 0 };
         static readonly string[] CivNames = { "Aurer", "Belen", "Corvik" };
         static readonly string[] TownNames = { "Aurheim", "Belhaven", "Corvstedt" };
         static readonly uint[] CivColors = { 0xD9483Bu, 0x3B6FD9u, 0xE0B532u };

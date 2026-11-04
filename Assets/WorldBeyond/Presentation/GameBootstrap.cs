@@ -7,7 +7,7 @@ using WorldBeyond.Simulation.Systems;
 namespace WorldBeyond.Presentation
 {
     public enum SelectionKind { Keine, Zelle, Person, Gebaeude }
-    public enum ToolMode { Auswahl, LagerBauen, StrasseBauen, FeldBauen }
+    public enum ToolMode { Auswahl, LagerBauen, StrasseBauen, FeldBauen, WerkstattBauen }
 
     /// <summary>Einstieg der Szene: baut Session, Ansichten, Kamera und HUD auf und verteilt Eingaben.</summary>
     public sealed class GameBootstrap : MonoBehaviour
@@ -102,6 +102,7 @@ namespace WorldBeyond.Presentation
             if (InputAdapter.KeyDown(KeyCode.B)) SetTool(ToolMode.LagerBauen);
             if (InputAdapter.KeyDown(KeyCode.R)) SetTool(ToolMode.StrasseBauen);
             if (InputAdapter.KeyDown(KeyCode.F)) SetTool(ToolMode.FeldBauen);
+            if (InputAdapter.KeyDown(KeyCode.H)) SetTool(ToolMode.WerkstattBauen);
             if (InputAdapter.KeyDown(KeyCode.Escape)) SetTool(ToolMode.Auswahl);
         }
 
@@ -136,7 +137,7 @@ namespace WorldBeyond.Presentation
             var w = Session.World;
             HoverCell = HudGui.PointerOverUi ? -1 : CellUnderMouse();
             HoverReason = null;
-            if ((Tool == ToolMode.LagerBauen || Tool == ToolMode.FeldBauen) && HoverCell >= 0)
+            if ((Tool == ToolMode.LagerBauen || Tool == ToolMode.FeldBauen || Tool == ToolMode.WerkstattBauen) && HoverCell >= 0)
                 HoverReason = Session.Sim.Preview(GameCommand.PlaceBuilding(w.PlayerCivId, ToolDef, HoverCell));
             else if (Tool == ToolMode.StrasseBauen && HoverCell >= 0 && RoadStart >= 0)
                 HoverReason = Session.Sim.Preview(GameCommand.PlaceRoad(w.PlayerCivId, RoadStart, HoverCell));
@@ -154,6 +155,7 @@ namespace WorldBeyond.Presentation
                     break;
                 case ToolMode.LagerBauen:
                 case ToolMode.FeldBauen:
+                case ToolMode.WerkstattBauen:
                     if (HoverCell >= 0 && Session.Issue(GameCommand.PlaceBuilding(w.PlayerCivId, ToolDef, HoverCell)) == null)
                         Tool = ToolMode.Auswahl;
                     break;
@@ -165,7 +167,7 @@ namespace WorldBeyond.Presentation
             }
         }
 
-        string ToolDef => Tool == ToolMode.FeldBauen ? DefaultContent.Field : DefaultContent.Storage;
+        string ToolDef => Tool == ToolMode.FeldBauen ? DefaultContent.Field : Tool == ToolMode.WerkstattBauen ? DefaultContent.Workshop : DefaultContent.Storage;
 
         void UpdateGhost()
         {
@@ -180,7 +182,7 @@ namespace WorldBeyond.Presentation
             if (!show) return;
             bool valid = Tool == ToolMode.StrasseBauen && RoadStart < 0 ? true : HoverReason == null;
             _ghost.GetComponent<Renderer>().sharedMaterial = PlaceholderMaterials.ForColor(valid ? PlaceholderStyle.ValidPlacement : PlaceholderStyle.InvalidPlacement);
-            float h = Tool == ToolMode.LagerBauen ? 0.5f : 0.08f; // Feld und Straße flach
+            float h = Tool == ToolMode.LagerBauen ? 0.5f : Tool == ToolMode.WerkstattBauen ? 1.0f : 0.08f; // Feld und Straße flach
             _ghost.transform.localScale = new Vector3(0.95f, h, 0.95f);
             _ghost.transform.position = EntityViews.CellCenter(Session.World.Map, HoverCell) + Vector3.up * h * 0.5f;
         }

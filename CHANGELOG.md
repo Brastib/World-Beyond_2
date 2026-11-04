@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased] – M1 Schritt 3: Zufriedenheit, Baupriorität, Verlauf
+## [Unreleased] – M1 Schritt 4: Produktionskette Werkzeug
+- Neues Gebäude Werkstatt (Taste H, 20 Holz + 10 Stein) und neuer Beruf Handwerker: 2 Holz + 1 Stein + 6 Std. Arbeit → 1 Werkzeug.
+- Holzfäller, Bergarbeiter und Baumeister nehmen Werkzeug im Lager mit und arbeiten damit doppelt so schnell; es nutzt sich nach 50 Einsätzen ab.
+- KI-Dörfer bauen ab 8 Einwohnern selbst eine Werkstatt. Inspektor zeigt Rezept, Werkstück-Fortschritt und Werkzeug der Person.
+- Save-Format v5 mit Migration von v4 und Regressionstest mit echter v4-Datei.
+
+## M1 Schritt 3: Zufriedenheit, Baupriorität, Verlauf
 - Zufriedenheit je Person (0..100) mit sichtbaren Gründen (satt, Haus, Enge, krank, Straßenanschluss); bewegt sich höchstens 5 Punkte pro Tag.
 - Wirkung: Geburten erst ab Ø 50 in der Siedlung, unter 25 arbeiten Personen langsamer; Lagetext nennt Unzufriedenheit.
 - Baupriorität (Knopf im Inspektor oder Taste P) als echter Befehl: Vorrang-Baustellen werden zuerst beliefert und gebaut, Replay-fähig.

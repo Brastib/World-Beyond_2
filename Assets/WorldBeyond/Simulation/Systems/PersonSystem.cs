@@ -18,6 +18,12 @@ namespace WorldBeyond.Simulation.Systems
         public static readonly int[] StockTargets = { 100, 80, 40 };
         /// <summary>Wintervorrat: Nahrungsziel wächst mit der Bevölkerung (90 Wintertage × 1 Nahrung, halb gedeckt durch Restbeeren).</summary>
         public const int FoodTargetPerPerson = 45;
+        /// <summary>Einsätze je Werkzeug (Sammelschritt, Bauarbeitsstunde, Straßenarbeitsstunde).</summary>
+        public const int ToolLife = 50;
+        /// <summary>Werkzeugvorrat, den eine Siedlung anstrebt: 1 je 2 Erwachsene, mindestens 3.</summary>
+        public static int ToolTarget(int adults) => Math.Max(3, adults / 2);
+
+        public static bool UsesTools(Role r) => r == Role.Holzfaeller || r == Role.Bergarbeiter || r == Role.Baumeister;
 
         public static int[] Targets(WorldState w, int settlementId)
         {
@@ -90,6 +96,9 @@ namespace WorldBeyond.Simulation.Systems
                     break;
                 case Role.Traeger:
                     if (TryHaul(sim, p) || TryBuild(sim, p)) return;
+                    break;
+                case Role.Handwerker:
+                    if (TryCraft(sim, p)) return;
                     break;
                 default:
                     // Rohstoffberufe sammeln ihren Rohstoff; ist das nicht möglich, helfen sie wie bisher überall aus.
@@ -235,6 +244,84 @@ namespace WorldBeyond.Simulation.Systems
             return true;
         }
 
+        public static bool HasCraftInput(Building b, RecipeDef r)
+        {
+            for (int k = 0; k < Res.Count; k++) if (b.Stock[k] < r.Input[k]) return false;
+            return true;
+        }
+
+        static bool InputsAvailable(Building storage, RecipeDef r)
+        {
+            for (int k = 0; k < Res.Count; k++) if (Economy.Available(storage, (ResourceType)k) < r.Input[k]) return false;
+            return true;
+        }
+
+        public static int Adults(WorldState w, int settlementId)
+        {
+            int n = 0;
+            foreach (var o in w.People) if (o.SettlementId == settlementId && o.IsAdult) n++;
+            return n;
+        }
+
+        /// <summary>
+        /// Werkstatt: liegt der Rezept-Eingang schon in der Werkstatt, wird weitergearbeitet. Sonst holt der Handwerker
+        /// den Eingang aus einem Lager, das alles vorrätig hat – nur solange der Werkzeugvorrat unter dem Doppelten des Ziels liegt.
+        /// </summary>
+        static bool TryCraft(WorldSimulation sim, Person p)
+        {
+            var w = sim.World;
+            Building best = null; int bestD = int.MaxValue;
+            foreach (var b in w.Buildings)
+            {
+                if (!b.Complete || b.SettlementId != p.SettlementId) continue;
+                var def = sim.Content.Building(b.DefId);
+                if (def.Recipe == null) continue;
+                int crafters = 0;
+                foreach (var o in w.People)
+                    if ((o.Task == PersonTask.Handwerk && o.TargetBuildingId == b.Id) || (o.Task == PersonTask.RohstoffHolen && o.HaulSiteId == b.Id)) crafters++;
+                if (crafters >= def.Workers) continue;
+                int d = w.Map.Manhattan(p.Cell, b.Cell);
+                if (d < bestD) { bestD = d; best = b; }
+            }
+            if (best == null) return false;
+            var recipe = sim.Content.Building(best.DefId).Recipe;
+            if (HasCraftInput(best, recipe))
+            {
+                if (!GoTo(sim, p, best.Cell)) return false;
+                p.Task = PersonTask.Handwerk; p.TargetBuildingId = best.Id;
+                return true;
+            }
+            int have = Economy.SettlementAvailable(w, sim.Content, p.SettlementId, recipe.Output);
+            if (have >= 2 * ToolTarget(Adults(w, p.SettlementId))) return false;
+            Building src = null; bestD = int.MaxValue;
+            foreach (var b in Economy.Storages(w, sim.Content, p.SettlementId))
+            {
+                if (!InputsAvailable(b, recipe)) continue;
+                int d = w.Map.Manhattan(p.Cell, b.Cell);
+                if (d < bestD) { bestD = d; src = b; }
+            }
+            if (src == null || !GoTo(sim, p, src.Cell)) return false;
+            p.Task = PersonTask.RohstoffHolen; p.TargetBuildingId = src.Id; p.HaulSiteId = best.Id;
+            return true;
+        }
+
+        /// <summary>Nimmt am Lager ein Werkzeug mit, wenn der Beruf es nutzt und die Person keins hat.</summary>
+        static void PickUpTool(Person p, Building storage)
+        {
+            if (p.ToolUses > 0 || !UsesTools(p.Role) || Economy.Available(storage, ResourceType.Werkzeug) <= 0) return;
+            storage.Stock[(int)ResourceType.Werkzeug]--;
+            p.ToolUses = ToolLife;
+        }
+
+        /// <summary>Verbraucht einen Werkzeugeinsatz; true = doppelte Leistung in dieser Stunde.</summary>
+        static bool UseTool(WorldState w, Person p)
+        {
+            if (p.ToolUses <= 0) return false;
+            p.ToolUses--;
+            if (p.ToolUses == 0) w.AddLog("Handwerk", $"{p.Name}: Werkzeug abgenutzt.", p.Id);
+            return true;
+        }
+
         static bool TryGather(WorldSimulation sim, Person p, int only)
         {
             var w = sim.World;
@@ -296,8 +383,12 @@ namespace WorldBeyond.Simulation.Systems
                     bool fits = WorldMap.Yield(m.Resource[c]) == p.TaskResource && m.ResourceAmount[c] > 0;
                     if (fits && p.CarryAmount < CarryMax)
                     {
-                        m.ResourceAmount[c]--;
-                        p.CarryType = p.TaskResource; p.CarryAmount++; p.TotalGathered++;
+                        // Werkzeug wirkt nur bei Holz und Stein (Beeren pflückt man von Hand).
+                        int n = p.TaskResource != ResourceType.Nahrung && p.ToolUses > 0 ? 2 : 1;
+                        n = Math.Min(n, Math.Min(m.ResourceAmount[c], CarryMax - p.CarryAmount));
+                        if (n == 2) UseTool(w, p);
+                        m.ResourceAmount[c] -= (short)n;
+                        p.CarryType = p.TaskResource; p.CarryAmount += n; p.TotalGathered += n;
                         if (m.ResourceAmount[c] == 0 && m.Resource[c] != NaturalResource.Beeren)
                         {
                             w.AddLog("Natur", $"{m.Resource[c]} bei {m.X(c)},{m.Y(c)} erschöpft.");
@@ -317,6 +408,7 @@ namespace WorldBeyond.Simulation.Systems
                     int put = Math.Min(p.CarryAmount, Economy.FreeCapacity(b, sim.Content));
                     b.Stock[(int)p.CarryType] += put;
                     p.CarryAmount -= put;
+                    PickUpTool(p, b);
                     if (p.CarryAmount > 0) StartDeliver(sim, p); else SetIdle(p, 0);
                     break;
                 }
@@ -326,6 +418,7 @@ namespace WorldBeyond.Simulation.Systems
                     int r = (int)p.TaskResource;
                     src.Stock[r] -= p.HaulAmount;
                     src.Reserved[r] -= p.HaulAmount;
+                    PickUpTool(p, src);
                     p.CarryType = p.TaskResource; p.CarryAmount = p.HaulAmount;
                     var site = w.BuildingById(p.HaulSiteId);
                     p.HaulSiteId = 0; p.HaulAmount = 0;
@@ -349,6 +442,7 @@ namespace WorldBeyond.Simulation.Systems
                     int c = p.Cell;
                     if (m.RoadWork[c] == 0) { SetIdle(p, 0); break; }
                     m.RoadWork[c]--;
+                    if (m.RoadWork[c] > 0 && UseTool(w, p)) m.RoadWork[c]--;
                     if (m.RoadWork[c] == 0)
                     {
                         m.Road[c] = true;
@@ -379,11 +473,39 @@ namespace WorldBeyond.Simulation.Systems
                     }
                     break;
                 }
+                case PersonTask.RohstoffHolen:
+                {
+                    var src = w.BuildingById(p.TargetBuildingId);
+                    var shop = w.BuildingById(p.HaulSiteId);
+                    var recipe = shop == null || !shop.Complete ? null : sim.Content.Building(shop.DefId).Recipe;
+                    if (recipe == null || HasCraftInput(shop, recipe) || !InputsAvailable(src, recipe)) { SetIdle(p, 0); break; }
+                    // Vereinfachung (ADR-016): das Rezeptbündel wird beim Abholen direkt dem Werkstattvorrat zugebucht;
+                    // der Handwerker geht anschließend mit ihm zur Werkstatt. Keine Ware entsteht oder verschwindet.
+                    for (int k = 0; k < Res.Count; k++) { src.Stock[k] -= recipe.Input[k]; shop.Stock[k] += recipe.Input[k]; }
+                    p.HaulSiteId = 0;
+                    p.Task = PersonTask.Handwerk; p.TargetBuildingId = shop.Id;
+                    if (!GoTo(sim, p, shop.Cell))
+                        throw new InvalidOperationException($"Person {p.Id}: Werkstatt {shop.Id} unerreichbar, obwohl Lager erreichbar war.");
+                    break;
+                }
+                case PersonTask.Handwerk:
+                {
+                    var shop = w.BuildingById(p.TargetBuildingId);
+                    var recipe = sim.Content.Building(shop.DefId).Recipe;
+                    if (!HasCraftInput(shop, recipe)) { SetIdle(p, 0); break; }
+                    shop.CraftProgress++;
+                    if (shop.CraftProgress < recipe.Labor) break;
+                    for (int k = 0; k < Res.Count; k++) shop.Stock[k] -= recipe.Input[k];
+                    shop.CraftProgress = 0;
+                    p.CarryType = recipe.Output; p.CarryAmount = recipe.OutputAmount;
+                    StartDeliver(sim, p);
+                    break;
+                }
                 case PersonTask.Bauen:
                 {
                     var site = w.BuildingById(p.TargetBuildingId);
                     if (site.Complete || !Construction.MaterialsComplete(site, sim.Content.Building(site.DefId))) { SetIdle(p, 0); break; }
-                    site.LaborRemaining--;
+                    site.LaborRemaining -= site.LaborRemaining > 1 && UseTool(w, p) ? 2 : 1;
                     if (site.LaborRemaining <= 0) { Construction.Finish(w, sim.Content, site); SetIdle(p, 0); }
                     break;
                 }

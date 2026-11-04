@@ -54,6 +54,7 @@ namespace WorldBeyond.Simulation.Core
                 if (!w.Map.InBounds(p.Cell)) e.Add($"Person {p.Id}: Ort außerhalb der Karte");
                 else if (!w.Map.IsWalkable(p.Cell)) e.Add($"Person {p.Id}: steht auf unbegehbarer Zelle");
                 if (p.CarryAmount < 0) e.Add($"Person {p.Id}: negative Traglast");
+                if (p.ToolUses < 0) e.Add($"Person {p.Id}: negative Werkzeugeinsätze");
                 if (p.Hunger < 0 || p.Hunger > 100 || p.Health < 0 || p.Health > 100 || p.Satisfaction < 0 || p.Satisfaction > 100) e.Add($"Person {p.Id}: Werte außerhalb 0..100");
                 if (p.PathPos < 0 || p.PathPos > p.Path.Count) e.Add($"Person {p.Id}: Pfadposition ungültig");
                 if (p.TargetBuildingId != 0 && w.BuildingById(p.TargetBuildingId) == null) e.Add($"Person {p.Id}: Zielgebäude fehlt");
@@ -64,6 +65,7 @@ namespace WorldBeyond.Simulation.Core
             {
                 Id(b, "Gebäude");
                 if (b.FieldGrowth < 0) e.Add($"Gebäude {b.Id}: negatives Feldwachstum");
+                if (b.CraftProgress < 0) e.Add($"Gebäude {b.Id}: negativer Werkstückfortschritt");
                 if (w.SettlementById(b.SettlementId) == null) e.Add($"Gebäude {b.Id}: Siedlung fehlt");
                 if (!w.Map.InBounds(b.Cell)) e.Add($"Gebäude {b.Id}: außerhalb");
                 else if (w.Map.BuildingAt[b.Cell] != b.Id) e.Add($"Gebäude {b.Id}: Kartenbelegung inkonsistent");

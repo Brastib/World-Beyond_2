@@ -48,13 +48,13 @@ namespace WorldBeyond.Simulation.Persistence
                     o.Write(p.AgeDays); o.Write(p.Health); o.Write(p.Hunger); o.Write(p.Cell); o.Write((byte)p.Task);
                     o.Write(p.TargetCell); o.Write(p.TargetBuildingId); o.Write((byte)p.TaskResource); o.Write((byte)p.CarryType);
                     o.Write(p.CarryAmount); o.Write(p.Cooldown); o.Write(p.HaulSiteId); o.Write(p.HaulAmount);
-                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered); o.Write((byte)p.Role); o.Write(p.Satisfaction);
+                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered); o.Write((byte)p.Role); o.Write(p.Satisfaction); o.Write(p.ToolUses);
                 }
                 o.Write(w.Buildings.Count);
                 foreach (var b in w.Buildings)
                 {
                     o.Write(b.Id); o.Write(b.DefId); o.Write(b.CivId); o.Write(b.SettlementId); o.Write(b.Cell); o.Write(b.Complete);
-                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId); o.Write(b.FieldGrowth); o.Write(b.HighPriority);
+                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId); o.Write(b.FieldGrowth); o.Write(b.HighPriority); o.Write(b.CraftProgress);
                     WriteArr(o, b.Delivered); WriteArr(o, b.Incoming); WriteArr(o, b.Stock); WriteArr(o, b.Reserved);
                 }
                 WriteCommands(o, w.PendingCommands);
@@ -117,6 +117,7 @@ namespace WorldBeyond.Simulation.Persistence
                     // Migration v1 → v2: Beruf deterministisch aus dem Alter; die tägliche Zuteilung verteilt danach neu.
                     p.Role = formatVersion >= 2 ? (Role)i.ReadByte() : (p.IsAdult ? Role.Sammler : Role.Kind);
                     p.Satisfaction = formatVersion >= 4 ? i.ReadInt32() : 60; // v3 → v4: neutraler Startwert
+                    if (formatVersion >= 5) p.ToolUses = i.ReadInt32(); // v4 → v5: kein Werkzeug
                     w.People.Add(p);
                 }
                 for (int c = Count(i); c > 0; c--)
@@ -128,7 +129,9 @@ namespace WorldBeyond.Simulation.Persistence
                     };
                     if (formatVersion >= 3) b.FieldGrowth = i.ReadInt32(); // v2 → v3: 0
                     if (formatVersion >= 4) b.HighPriority = i.ReadBoolean(); // v3 → v4: normal
-                    b.Delivered = ReadArr(i); b.Incoming = ReadArr(i); b.Stock = ReadArr(i); b.Reserved = ReadArr(i);
+                    if (formatVersion >= 5) b.CraftProgress = i.ReadInt32(); // v4 → v5: kein Werkstück
+                    int len = formatVersion >= 5 ? Res.Count : 3; // v4 → v5: Werkzeug-Eintrag = 0
+                    b.Delivered = ReadArr(i, len); b.Incoming = ReadArr(i, len); b.Stock = ReadArr(i, len); b.Reserved = ReadArr(i, len);
                     w.Buildings.Add(b);
                 }
                 ReadCommands(i, w.PendingCommands);
@@ -145,11 +148,11 @@ namespace WorldBeyond.Simulation.Persistence
         static void ReadList(BinaryReader i, List<int> l) { for (int c = Count(i); c > 0; c--) l.Add(i.ReadInt32()); }
         static void WriteArr(BinaryWriter o, int[] a) { o.Write(a.Length); foreach (var v in a) o.Write(v); }
 
-        static int[] ReadArr(BinaryReader i)
+        static int[] ReadArr(BinaryReader i, int expected)
         {
             int len = Count(i);
-            if (len != Res.Count) throw new SaveLoadException($"Ressourcenvektor mit {len} statt {Res.Count} Einträgen.");
-            var a = new int[len];
+            if (len != expected) throw new SaveLoadException($"Ressourcenvektor mit {len} statt {expected} Einträgen.");
+            var a = Res.Empty();
             for (int k = 0; k < len; k++) a[k] = i.ReadInt32();
             return a;
         }

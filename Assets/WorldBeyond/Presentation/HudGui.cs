@@ -120,6 +120,10 @@ namespace WorldBeyond.Presentation
             if (GUILayout.Toggle(_g.Tool == ToolMode.FeldBauen, $"Feld anlegen (F)\n{feld.Cost[1]} Holz, {feld.Labor} Std. Arbeit, Ernte ab Herbst", "Button"))
             { if (_g.Tool != ToolMode.FeldBauen) _g.SetTool(ToolMode.FeldBauen); }
             else if (_g.Tool == ToolMode.FeldBauen) _g.SetTool(ToolMode.Auswahl);
+            var werkstatt = s.Content.Building(DefaultContent.Workshop);
+            if (GUILayout.Toggle(_g.Tool == ToolMode.WerkstattBauen, $"Werkstatt (H)\n{werkstatt.Cost[1]} Holz, {werkstatt.Cost[2]} Stein, {werkstatt.Labor} Std.; macht Werkzeug", "Button"))
+            { if (_g.Tool != ToolMode.WerkstattBauen) _g.SetTool(ToolMode.WerkstattBauen); }
+            else if (_g.Tool == ToolMode.WerkstattBauen) _g.SetTool(ToolMode.Auswahl);
             if (_g.Tool != ToolMode.Auswahl) GUILayout.Label("<i>Linksklick auf Karte, Esc bricht ab.</i>", _small);
 
             GUILayout.Space(8);
@@ -196,6 +200,8 @@ namespace WorldBeyond.Presentation
                     if (p.Satisfaction < Satisfaction.LowThreshold) sb.AppendLine($"<color=#ffb060>Unzufrieden: {Satisfaction.DiscontentPauseHours} Std. Pause nach jeder Aufgabe.</color>");
                     sb.AppendLine($"Aufgabe: <b>{p.Task}</b>{TaskDetail(w, content, p)}");
                     sb.AppendLine($"Trägt: {(p.CarryAmount > 0 ? p.CarryAmount + " " + p.CarryType : "nichts")} · gesammelt gesamt {p.TotalGathered}");
+                    sb.AppendLine(p.ToolUses > 0 ? $"Werkzeug: noch {p.ToolUses} Einsätze (doppelte Leistung)"
+                        : PersonSystem.UsesTools(p.Role) ? "Werkzeug: keins (nimmt eins im Lager mit, wenn vorrätig)" : "Werkzeug: braucht keins");
                     sb.AppendLine($"Ort: {w.Map.X(p.Cell)},{w.Map.Y(p.Cell)}");
                     var h = w.HouseholdById(p.HouseholdId);
                     sb.AppendLine();
@@ -230,6 +236,14 @@ namespace WorldBeyond.Presentation
                         sb.AppendLine(PersonSystem.IsGrowingSeason(w)
                             ? (b.FieldGrowth < allowed ? "Wächst – braucht Bauern." : "Wächst planmäßig (Soll erreicht).")
                             : (b.FieldGrowth >= 2 ? "Erntezeit: Bauern bringen Nahrung ins Lager." : "Abgeerntet, ruht bis zum Frühling."));
+                    }
+                    if (def.Recipe != null && b.Complete)
+                    {
+                        var rc = def.Recipe;
+                        int crafters = w.People.Count(p => (p.Task == PersonTask.Handwerk && p.TargetBuildingId == b.Id) || (p.Task == PersonTask.RohstoffHolen && p.HaulSiteId == b.Id));
+                        sb.AppendLine($"Rezept: {Vec(rc.Input)} → {rc.OutputAmount} {rc.Output} in {rc.Labor} Std. · Handwerker {crafters}/{def.Workers}");
+                        sb.AppendLine(PersonSystem.HasCraftInput(b, rc) ? $"Werkstück: {b.CraftProgress}/{rc.Labor} Std. (Material liegt bereit)"
+                            : crafters > 0 ? "Handwerker holt Holz und Stein aus dem Lager." : "Leer: kein Handwerker eingeteilt (Werkzeugvorrat reicht oder Holz/Stein fehlen).");
                     }
                     if (def.StorageCapacity > 0)
                         sb.AppendLine($"Lager: {Vec(b.Stock)} ({Res.Sum(b.Stock)}/{def.StorageCapacity}), reserviert {Vec(b.Reserved)}");
@@ -276,6 +290,8 @@ namespace WorldBeyond.Presentation
                 case PersonTask.MaterialBringen: return $" (zu Baustelle #{p.TargetBuildingId})";
                 case PersonTask.Bauen: return $" (an #{p.TargetBuildingId})";
                 case PersonTask.StrasseBauen: return $" (Straßenfeld {w.Map.X(p.TargetCell)},{w.Map.Y(p.TargetCell)})";
+                case PersonTask.RohstoffHolen: return $" (Holz/Stein aus #{p.TargetBuildingId} für Werkstatt #{p.HaulSiteId})";
+                case PersonTask.Handwerk: return $" (Werkstatt #{p.TargetBuildingId})";
                 case PersonTask.Feldarbeit: return $" (Feld #{p.TargetBuildingId}, {(PersonSystem.IsGrowingSeason(w) ? "bestellen" : "ernten")})";
                 default: return p.Cooldown > 0 ? $" (wartet {p.Cooldown} Std.)" : "";
             }
