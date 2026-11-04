@@ -41,3 +41,9 @@ Quelle: `Assets/WorldBeyond/Tests/Shared` (laufen auch als Unity-EditMode-Tests)
 2. F → Feld auf Wiese: graue Baustelle, danach braune Platte; im Sommer wird sie gelb/gold und höher; Inspektor zeigt Wachstum und Bauern.
 3. Ab Herbst sinkt das Wachstum, Nahrung im Lager steigt; Statistik (T) zeigt Felder und erwarteten Ertrag.
 4. Bei KI-Dörfern entstehen Felder von selbst.
+
+## Manuelle M1-Prüfung (Schritt 3)
+1. Person anklicken: Inspektor zeigt „Zufriedenheit X → Ziel Y (+15 satt, +15 eigenes Haus …)“.
+2. Zwei Felder (F) setzen, das zweite auswählen, „Vorrang geben (P)“ drücken: Träger und Baumeister gehen zuerst dorthin; Inspektor zeigt „Priorität: Vorrang“.
+3. Statistik (T): nach dem ersten Monatswechsel erscheinen Balken (Einwohner) und weiße Punkte (Ø Zufriedenheit).
+4. Speichern, Laden: Vorrang, Zufriedenheit und Verlauf sind noch da.

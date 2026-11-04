@@ -22,6 +22,15 @@ namespace WorldBeyond.Simulation.Core
         public string Status = "";
         public int Births;
         public int Deaths;
+        /// <summary>Monatlicher Verlauf, höchstens <see cref="HistoryPoint.MaxPoints"/> Einträge (Save v4).</summary>
+        public readonly List<HistoryPoint> History = new List<HistoryPoint>();
+    }
+
+    public sealed class HistoryPoint
+    {
+        public const int MaxPoints = 120;
+        public long Tick;
+        public int Population, Food, Wood, Stone, Satisfaction;
     }
 
     public sealed class Household : IEntity
@@ -55,6 +64,8 @@ namespace WorldBeyond.Simulation.Core
         public string Name = "";
         public int AgeDays;
         public int Health = 100;
+        /// <summary>0..100, bewegt sich täglich um 5 Richtung Zielwert (Save v4, Standard 60).</summary>
+        public int Satisfaction = 60;
         /// <summary>0 = satt, 100 = verhungernd.</summary>
         public int Hunger;
         public int Cell;
@@ -90,6 +101,8 @@ namespace WorldBeyond.Simulation.Core
         public int OwnerHouseholdId;
         /// <summary>Feld: angesammeltes Wachstum (Save v3). Ernte wandelt 2 Wachstum in 1 Nahrung.</summary>
         public int FieldGrowth;
+        /// <summary>Spielerpriorität: Baustellen mit Vorrang werden zuerst beliefert und gebaut (Save v4).</summary>
+        public bool HighPriority;
         public int[] Delivered = Res.Empty();
         /// <summary>Material, das Träger gerade zur Baustelle bringen.</summary>
         public int[] Incoming = Res.Empty();

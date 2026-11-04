@@ -11,11 +11,13 @@ namespace WorldBeyond.Simulation.Systems
         public static void Run(WorldSimulation sim)
         {
             Needs(sim);
+            Satisfaction.Run(sim);
             Lifecycle.Run(sim);
             Nature(sim.World);
             Jobs.Assign(sim.World, sim.Content);
             Households(sim);
             SettlementPlanner.Run(sim);
+            Satisfaction.RecordHistory(sim);
         }
 
         static void Needs(WorldSimulation sim)

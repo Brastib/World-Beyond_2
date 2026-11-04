@@ -22,7 +22,7 @@ namespace WorldBeyond.Tests
                     var st = Economy.SettlementStock(w, sim.Content, s.Id);
                     int houses = w.Buildings.Count(b => b.SettlementId == s.Id && b.Complete && b.DefId == "haus");
                     int hungry = w.People.Count(p => p.SettlementId == s.Id && p.Hunger > 0);
-                    TestContext.WriteLine($"{Calendar.Format(w.Tick)} {s.Name}: Nahrung {st[0]} Holz {st[1]} Stein {st[2]} Häuser {houses} Hungrig {hungry}");
+                    TestContext.WriteLine($"{Calendar.Format(w.Tick)} {s.Name}: Nahrung {st[0]} Holz {st[1]} Stein {st[2]} Häuser {houses} Hungrig {hungry} Zufrieden Ø {Satisfaction.Average(w, s.Id)} | {s.Status}");
                 }
             }
             Assert.That(w.Households.Count(h => h.HomeBuildingId != 0), Is.GreaterThanOrEqualTo(3), "Mindestens ein Haus pro Siedlung nach einem Jahr");

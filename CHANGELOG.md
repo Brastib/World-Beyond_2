@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased] – M1 Schritt 2: Straßenbau und Felder
+## [Unreleased] – M1 Schritt 3: Zufriedenheit, Baupriorität, Verlauf
+- Zufriedenheit je Person (0..100) mit sichtbaren Gründen (satt, Haus, Enge, krank, Straßenanschluss); bewegt sich höchstens 5 Punkte pro Tag.
+- Wirkung: Geburten erst ab Ø 50 in der Siedlung, unter 25 arbeiten Personen langsamer; Lagetext nennt Unzufriedenheit.
+- Baupriorität (Knopf im Inspektor oder Taste P) als echter Befehl: Vorrang-Baustellen werden zuerst beliefert und gebaut, Replay-fähig.
+- Monatlicher Verlauf je Siedlung (Einwohner, Bestände, Ø Zufriedenheit, höchstens 120 Monate) als Mini-Diagramm in der Statistik (T).
+- Save-Format v4 mit Migration von v3 und Regressionstest mit echter v3-Datei.
+
+## M1 Schritt 2: Straßenbau und Felder
 - Straßen werden geplant und Feld für Feld von Baumeistern gebaut (hell karierte Vorschau → braune Straße).
 - Neuer Beruf Bauer, neues Gebäude Feld (Taste F): Wachstum im Frühling/Sommer, Ernte ab Herbst, Farbe braun → gold.
 - KI-Dörfer legen selbst Felder an; Inspektor und Statistik zeigen Feldertrag und offene Straßenfelder.

@@ -29,7 +29,12 @@ namespace WorldBeyond.Simulation.Persistence
                 o.Write(w.Civilizations.Count);
                 foreach (var c in w.Civilizations) { o.Write(c.Id); o.Write(c.Name); o.Write(c.ColorRgb); o.Write(c.CapitalSettlementId); }
                 o.Write(w.Settlements.Count);
-                foreach (var s in w.Settlements) { o.Write(s.Id); o.Write(s.CivId); o.Write(s.Name); o.Write(s.CenterCell); o.Write(s.Status); o.Write(s.Births); o.Write(s.Deaths); }
+                foreach (var s in w.Settlements)
+                {
+                    o.Write(s.Id); o.Write(s.CivId); o.Write(s.Name); o.Write(s.CenterCell); o.Write(s.Status); o.Write(s.Births); o.Write(s.Deaths);
+                    o.Write(s.History.Count);
+                    foreach (var hp in s.History) { o.Write(hp.Tick); o.Write(hp.Population); o.Write(hp.Food); o.Write(hp.Wood); o.Write(hp.Stone); o.Write(hp.Satisfaction); }
+                }
                 o.Write(w.Households.Count);
                 foreach (var h in w.Households)
                 {
@@ -43,13 +48,13 @@ namespace WorldBeyond.Simulation.Persistence
                     o.Write(p.AgeDays); o.Write(p.Health); o.Write(p.Hunger); o.Write(p.Cell); o.Write((byte)p.Task);
                     o.Write(p.TargetCell); o.Write(p.TargetBuildingId); o.Write((byte)p.TaskResource); o.Write((byte)p.CarryType);
                     o.Write(p.CarryAmount); o.Write(p.Cooldown); o.Write(p.HaulSiteId); o.Write(p.HaulAmount);
-                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered); o.Write((byte)p.Role);
+                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered); o.Write((byte)p.Role); o.Write(p.Satisfaction);
                 }
                 o.Write(w.Buildings.Count);
                 foreach (var b in w.Buildings)
                 {
                     o.Write(b.Id); o.Write(b.DefId); o.Write(b.CivId); o.Write(b.SettlementId); o.Write(b.Cell); o.Write(b.Complete);
-                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId); o.Write(b.FieldGrowth);
+                    o.Write(b.LaborRemaining); o.Write(b.Condition); o.Write(b.OwnerHouseholdId); o.Write(b.FieldGrowth); o.Write(b.HighPriority);
                     WriteArr(o, b.Delivered); WriteArr(o, b.Incoming); WriteArr(o, b.Stock); WriteArr(o, b.Reserved);
                 }
                 WriteCommands(o, w.PendingCommands);
@@ -86,6 +91,9 @@ namespace WorldBeyond.Simulation.Persistence
                 {
                     var s = new Settlement { Id = i.ReadInt32(), CivId = i.ReadInt32(), Name = i.ReadString(), CenterCell = i.ReadInt32() };
                     if (formatVersion >= 2) { s.Status = i.ReadString(); s.Births = i.ReadInt32(); s.Deaths = i.ReadInt32(); }
+                    if (formatVersion >= 4) // v3 → v4: leerer Verlauf
+                        for (int hc = Count(i); hc > 0; hc--)
+                            s.History.Add(new HistoryPoint { Tick = i.ReadInt64(), Population = i.ReadInt32(), Food = i.ReadInt32(), Wood = i.ReadInt32(), Stone = i.ReadInt32(), Satisfaction = i.ReadInt32() });
                     w.Settlements.Add(s);
                 }
                 for (int c = Count(i); c > 0; c--)
@@ -108,6 +116,7 @@ namespace WorldBeyond.Simulation.Persistence
                     p.PathPos = i.ReadInt32(); p.TotalGathered = i.ReadInt32();
                     // Migration v1 → v2: Beruf deterministisch aus dem Alter; die tägliche Zuteilung verteilt danach neu.
                     p.Role = formatVersion >= 2 ? (Role)i.ReadByte() : (p.IsAdult ? Role.Sammler : Role.Kind);
+                    p.Satisfaction = formatVersion >= 4 ? i.ReadInt32() : 60; // v3 → v4: neutraler Startwert
                     w.People.Add(p);
                 }
                 for (int c = Count(i); c > 0; c--)
@@ -118,6 +127,7 @@ namespace WorldBeyond.Simulation.Persistence
                         Complete = i.ReadBoolean(), LaborRemaining = i.ReadInt32(), Condition = i.ReadInt32(), OwnerHouseholdId = i.ReadInt32()
                     };
                     if (formatVersion >= 3) b.FieldGrowth = i.ReadInt32(); // v2 → v3: 0
+                    if (formatVersion >= 4) b.HighPriority = i.ReadBoolean(); // v3 → v4: normal
                     b.Delivered = ReadArr(i); b.Incoming = ReadArr(i); b.Stock = ReadArr(i); b.Reserved = ReadArr(i);
                     w.Buildings.Add(b);
                 }

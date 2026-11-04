@@ -25,6 +25,12 @@ namespace WorldBeyond.Simulation.Systems
                     int have = Economy.SettlementAvailable(w, sim.Content, payer.Id, ResourceType.Stein);
                     if (have < cost) return $"Zu wenig Stein in {payer.Name}: {have}/{cost}.";
                     return null;
+                case CommandType.BauPrioritaet:
+                    var b = w.BuildingById(c.CellA);
+                    if (b == null) return "Unbekanntes Gebäude.";
+                    if (b.CivId != c.CivId) return "Das Gebäude gehört nicht zu deiner Zivilisation.";
+                    if (b.Complete) return "Das Gebäude ist bereits fertig.";
+                    return null;
                 default:
                     return "Unbekannter Befehl.";
             }
@@ -46,6 +52,15 @@ namespace WorldBeyond.Simulation.Systems
                 c.Succeeded = true;
                 c.Result = c.CivId == 0 ? "Beobachtermodus." : "Du spielst jetzt " + w.Civ(c.CivId).Name + ".";
                 w.AddLog("Spieler", c.Result);
+                return;
+            }
+            if (c.Type == CommandType.BauPrioritaet)
+            {
+                var pb = w.BuildingById(c.CellA);
+                pb.HighPriority = c.CellB != 0;
+                c.Succeeded = true;
+                c.Result = $"{sim.Content.Building(pb.DefId).Name} #{pb.Id}: " + (pb.HighPriority ? "Vorrang." : "normale Priorität.");
+                w.AddLog("Bau", c.Result, pb.Id);
                 return;
             }
             if (c.Type == CommandType.GebaeudePlatzieren)

@@ -96,6 +96,7 @@ namespace WorldBeyond.Presentation
             if (InputAdapter.KeyDown(KeyCode.F9)) Session.Load("schnell");
             if (InputAdapter.KeyDown(KeyCode.F3)) ShowDebug = !ShowDebug;
             if (InputAdapter.KeyDown(KeyCode.T)) ShowStats = !ShowStats;
+            if (InputAdapter.KeyDown(KeyCode.P)) TogglePriority();
             if (InputAdapter.KeyDown(KeyCode.F12)) TakeScreenshot();
             if (InputAdapter.KeyDown(KeyCode.L)) { Map.Layer = (MapLayer)(((int)Map.Layer + 1) % 3); Map.Refresh(Session.World.Map); }
             if (InputAdapter.KeyDown(KeyCode.B)) SetTool(ToolMode.LagerBauen);
@@ -192,6 +193,15 @@ namespace WorldBeyond.Presentation
             else if (SelKind == SelectionKind.Gebaeude) { var b = w.BuildingById(SelId); if (b != null) pos = EntityViews.CellCenter(w.Map, b.Cell); }
             else if (SelKind == SelectionKind.Zelle && w.Map.InBounds(SelId)) { pos = EntityViews.CellCenter(w.Map, SelId); size = 1f; }
             Entities.ShowSelection(pos, size);
+        }
+
+        /// <summary>Schaltet den Vorrang der ausgewählten eigenen Baustelle um (Befehl, also im Replay enthalten).</summary>
+        public void TogglePriority()
+        {
+            var w = Session.World;
+            var b = SelKind == SelectionKind.Gebaeude ? w.BuildingById(SelId) : null;
+            if (b == null) { Session.Message = "Vorrang: zuerst eine eigene Baustelle auswählen."; return; }
+            Session.Issue(GameCommand.SetPriority(w.PlayerCivId, b.Id, !b.HighPriority));
         }
 
         public void CyclePlayerCiv()

@@ -72,7 +72,8 @@ namespace WorldBeyond.Simulation.Systems
         static void SetIdle(Person p, int cooldown)
         {
             p.Task = PersonTask.Leerlauf; p.TargetBuildingId = 0; p.Path.Clear(); p.PathPos = 0; p.MoveProgress = 0;
-            p.HaulSiteId = 0; p.HaulAmount = 0; p.Cooldown = cooldown;
+            p.HaulSiteId = 0; p.HaulAmount = 0;
+            p.Cooldown = cooldown + (p.Satisfaction < Satisfaction.LowThreshold ? Satisfaction.DiscontentPauseHours : 0);
         }
 
         static void Decide(WorldSimulation sim, Person p)
@@ -121,9 +122,10 @@ namespace WorldBeyond.Simulation.Systems
         static bool TryHaul(WorldSimulation sim, Person p)
         {
             var w = sim.World;
+            for (int pass = 0; pass < 2; pass++) // Vorrang-Baustellen zuerst
             foreach (var site in w.Buildings)
             {
-                if (site.Complete || site.SettlementId != p.SettlementId) continue;
+                if (site.Complete || site.SettlementId != p.SettlementId || site.HighPriority != (pass == 0)) continue;
                 var def = sim.Content.Building(site.DefId);
                 for (int r = 0; r < Res.Count; r++)
                 {
@@ -152,9 +154,10 @@ namespace WorldBeyond.Simulation.Systems
         static bool TryBuild(WorldSimulation sim, Person p)
         {
             var w = sim.World;
+            for (int pass = 0; pass < 2; pass++) // Vorrang-Baustellen zuerst
             foreach (var site in w.Buildings)
             {
-                if (site.Complete || site.SettlementId != p.SettlementId || site.LaborRemaining <= 0) continue;
+                if (site.Complete || site.SettlementId != p.SettlementId || site.LaborRemaining <= 0 || site.HighPriority != (pass == 0)) continue;
                 if (!Construction.MaterialsComplete(site, sim.Content.Building(site.DefId))) continue;
                 int builders = 0;
                 foreach (var o in w.People) if (o.Task == PersonTask.Bauen && o.TargetBuildingId == site.Id) builders++;

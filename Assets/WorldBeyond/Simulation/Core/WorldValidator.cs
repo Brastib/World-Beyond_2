@@ -54,7 +54,7 @@ namespace WorldBeyond.Simulation.Core
                 if (!w.Map.InBounds(p.Cell)) e.Add($"Person {p.Id}: Ort außerhalb der Karte");
                 else if (!w.Map.IsWalkable(p.Cell)) e.Add($"Person {p.Id}: steht auf unbegehbarer Zelle");
                 if (p.CarryAmount < 0) e.Add($"Person {p.Id}: negative Traglast");
-                if (p.Hunger < 0 || p.Hunger > 100 || p.Health < 0 || p.Health > 100) e.Add($"Person {p.Id}: Werte außerhalb 0..100");
+                if (p.Hunger < 0 || p.Hunger > 100 || p.Health < 0 || p.Health > 100 || p.Satisfaction < 0 || p.Satisfaction > 100) e.Add($"Person {p.Id}: Werte außerhalb 0..100");
                 if (p.PathPos < 0 || p.PathPos > p.Path.Count) e.Add($"Person {p.Id}: Pfadposition ungültig");
                 if (p.TargetBuildingId != 0 && w.BuildingById(p.TargetBuildingId) == null) e.Add($"Person {p.Id}: Zielgebäude fehlt");
             }

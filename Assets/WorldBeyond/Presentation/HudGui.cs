@@ -180,6 +180,7 @@ namespace WorldBeyond.Presentation
         {
             var w = _g.Session.World; var content = _g.Session.Content;
             var sb = new StringBuilder();
+            Building prioritySite = null;
             switch (_g.SelKind)
             {
                 case SelectionKind.Person:
@@ -189,6 +190,10 @@ namespace WorldBeyond.Presentation
                     sb.AppendLine($"<b>Person {p.Name}</b> #{p.Id}");
                     sb.AppendLine($"Alter: {p.AgeDays / Calendar.DaysPerYear} Jahre · Beruf: <b>{Jobs.RoleName(p.Role)}</b>");
                     sb.AppendLine($"Gesundheit {p.Health} · Hunger {p.Hunger}");
+                    var why = new System.Collections.Generic.List<string>();
+                    int target = Satisfaction.Target(w, content, p, why);
+                    sb.AppendLine($"Zufriedenheit <b>{p.Satisfaction}</b> → Ziel {target} ({string.Join(", ", why)})");
+                    if (p.Satisfaction < Satisfaction.LowThreshold) sb.AppendLine($"<color=#ffb060>Unzufrieden: {Satisfaction.DiscontentPauseHours} Std. Pause nach jeder Aufgabe.</color>");
                     sb.AppendLine($"Aufgabe: <b>{p.Task}</b>{TaskDetail(w, content, p)}");
                     sb.AppendLine($"Trägt: {(p.CarryAmount > 0 ? p.CarryAmount + " " + p.CarryType : "nichts")} · gesammelt gesamt {p.TotalGathered}");
                     sb.AppendLine($"Ort: {w.Map.X(p.Cell)},{w.Map.Y(p.Cell)}");
@@ -214,6 +219,8 @@ namespace WorldBeyond.Presentation
                         sb.AppendLine("Unterwegs: " + Vec(b.Incoming));
                         sb.AppendLine($"Arbeit offen: {b.LaborRemaining} Std.");
                         sb.AppendLine(Construction.MaterialsComplete(b, def) ? "→ wartet auf Bauarbeiter" : "→ wartet auf Material aus dem Lager");
+                        sb.AppendLine("Priorität: " + (b.HighPriority ? "<b>Vorrang</b> (wird zuerst beliefert und gebaut)" : "normal"));
+                        if (b.CivId == w.PlayerCivId) prioritySite = b;
                     }
                     if (def.FieldCapacity > 0 && b.Complete)
                     {
@@ -249,7 +256,12 @@ namespace WorldBeyond.Presentation
                     break;
             }
             var r = Panel(new Rect(width - 408, 48, 400, 470));
-            GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, r.height - 12), sb.ToString(), _small);
+            GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, r.height - 48), sb.ToString(), _small);
+            if (prioritySite != null)
+            {
+                string label = prioritySite.HighPriority ? "Vorrang aufheben (P)" : "Vorrang geben (P)";
+                if (GUI.Button(new Rect(r.x + 8, r.yMax - 38, 200, 30), label)) _g.TogglePriority();
+            }
         }
 
         static string Vec(int[] v) => $"N {v[0]} · H {v[1]} · S {v[2]}";
@@ -280,18 +292,23 @@ namespace WorldBeyond.Presentation
             sb.AppendLine();
             sb.AppendLine($"<b>Siedlung {s.Name}</b> · Nation <b>{civ.Name}</b>");
             sb.AppendLine($"Einwohner {pop} · Häuser {houses} · Baustellen {sites} · Geburten {s.Births} · Tode {s.Deaths}");
+            sb.AppendLine($"Zufriedenheit Ø {Satisfaction.Average(w, sid)} (Geburten ab {Satisfaction.BirthMinimum})");
             if (!string.IsNullOrEmpty(s.Status)) sb.AppendLine("<b>Lage:</b> " + s.Status);
             sb.AppendLine($"Lager: {Vec(stock)} ({Res.Sum(stock)}/{cap})");
             if (Res.Sum(stock) >= cap - 5) sb.AppendLine("<color=#ffb060>Lager voll: Sammeln stockt. Baue ein Lager (B).</color>");
         }
 
+        const float StatsBlock = 168f;
+
         void Stats(float width)
         {
             var w = _g.Session.World; var content = _g.Session.Content;
-            var r = Panel(new Rect(266, 48, Mathf.Min(900, width - 680), 60 + 120 * w.Settlements.Count));
-            var sb = new StringBuilder("<b>Statistik</b> (T schließt)\n");
+            var r = Panel(new Rect(266, 48, Mathf.Min(900, width - 680), 34 + StatsBlock * w.Settlements.Count));
+            GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, 24), "<b>Statistik</b> (T schließt) · Balken = Einwohner je Monat, Punkt = Ø Zufriedenheit", _small);
+            float y = r.y + 30;
             foreach (var s in w.Settlements)
             {
+                var sb = new StringBuilder();
                 var civ = w.Civ(s.CivId);
                 var people = w.People.Where(p => p.SettlementId == s.Id).ToList();
                 var hh = w.Households.Where(h => h.SettlementId == s.Id).ToList();
@@ -302,15 +319,48 @@ namespace WorldBeyond.Presentation
                 var stock = Economy.SettlementStock(w, content, s.Id);
                 var roles = string.Join(", ", System.Enum.GetValues(typeof(Role)).Cast<Role>()
                     .Select(ro => new { ro, n = people.Count(p => p.Role == ro) }).Where(x => x.n > 0).Select(x => $"{Jobs.RoleName(x.ro)} {x.n}"));
-                sb.AppendLine();
-                sb.AppendLine($"<b><color=#{ColorUtility.ToHtmlStringRGB(PlaceholderStyle.Civ(civ.ColorRgb))}>■</color> {s.Name}</b> ({civ.Name}{(civ.Id == w.PlayerCivId ? ", du" : ", KI")})");
+                var civColor = PlaceholderStyle.Civ(civ.ColorRgb);
+                sb.AppendLine($"<b><color=#{ColorUtility.ToHtmlStringRGB(civColor)}>■</color> {s.Name}</b> ({civ.Name}{(civ.Id == w.PlayerCivId ? ", du" : ", KI")})");
                 sb.AppendLine($"Einwohner {people.Count} (Kinder {people.Count(p => !p.IsAdult)}) · Haushalte {hh.Count} (ohne Haus {hh.Count(h => h.HomeBuildingId == 0)}) · Häuser {houses} · Lagerorte {storages + 1} (inkl. Ortszentrum)");
-                sb.AppendLine($"Bestand: {Vec(stock)} · Geburten {s.Births} · Tode {s.Deaths}");
+                sb.AppendLine($"Bestand: {Vec(stock)} · Geburten {s.Births} · Tode {s.Deaths} · Zufriedenheit Ø {Satisfaction.Average(w, s.Id)}");
                 sb.AppendLine("Berufe: " + roles);
                 sb.AppendLine($"Felder {fields.Count} (erwarteter Ertrag {fields.Sum(f => f.FieldGrowth) / 2} Nahrung) · offene Straßenfelder {roadWork}");
                 sb.AppendLine("Lage: " + s.Status);
+                GUI.Label(new Rect(r.x + 8, y, r.width - 16, 112), sb.ToString(), _small);
+                HistoryChart(new Rect(r.x + 8, y + 114, r.width - 16, 46), s, civColor);
+                y += StatsBlock;
             }
-            GUI.Label(new Rect(r.x + 8, r.y + 6, r.width - 16, r.height - 12), sb.ToString(), _small);
+        }
+
+        /// <summary>Mini-Verlauf: die letzten Monatswerte als Balken (Einwohner), Punkte für die Ø Zufriedenheit (0..100).</summary>
+        void HistoryChart(Rect area, Settlement s, Color civColor)
+        {
+            var old = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.35f);
+            GUI.DrawTexture(area, Texture2D.whiteTexture);
+            int n = s.History.Count;
+            if (n == 0)
+            {
+                GUI.color = old;
+                GUI.Label(new Rect(area.x + 6, area.y + 12, area.width - 12, 22), "Noch kein Verlauf – der erste Punkt entsteht zum Monatsbeginn.", _small);
+                return;
+            }
+            int max = Mathf.Max(1, s.History.Max(h => h.Population));
+            int shown = Mathf.Min(n, Mathf.Max(1, (int)((area.width - 60) / 6)));
+            float bw = (area.width - 60) / shown;
+            for (int k = 0; k < shown; k++)
+            {
+                var h = s.History[n - shown + k];
+                float x = area.x + k * bw;
+                float bh = (area.height - 4) * h.Population / max;
+                GUI.color = civColor;
+                GUI.DrawTexture(new Rect(x + 1, area.yMax - 2 - bh, Mathf.Max(1, bw - 2), bh), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                float sy = area.yMax - 2 - (area.height - 4) * h.Satisfaction / 100f;
+                GUI.DrawTexture(new Rect(x + bw / 2 - 2, sy - 2, 4, 4), Texture2D.whiteTexture);
+            }
+            GUI.color = old;
+            GUI.Label(new Rect(area.xMax - 58, area.y + 2, 58, 40), $"max {max}\n{n} Mon.", _small);
         }
 
         void Messages(float height)
@@ -343,15 +393,17 @@ namespace WorldBeyond.Presentation
 
         void Help(float width, float height)
         {
-            var r = Panel(new Rect(width / 2 - 260, 60, 520, 330));
+            var r = Panel(new Rect(width / 2 - 260, 60, 520, 380));
             GUI.Label(new Rect(r.x + 10, r.y + 8, r.width - 20, r.height - 16),
                 "<b>Steuerung</b>\n" +
                 "WASD/Pfeile: Kamera schwenken · Q/E oder rechte Maustaste: drehen · Mausrad: zoomen · mittlere Maustaste: ziehen\n" +
-                "Linksklick: auswählen · B: Lager bauen · F: Feld anlegen · R: Straße (Start, dann Ende klicken) · Esc: abbrechen\n" +
+                "Linksklick: auswählen · B: Lager bauen · F: Feld anlegen · R: Straße (Start, dann Ende klicken) · P: Vorrang für ausgewählte Baustelle · Esc: abbrechen\n" +
                 "Leertaste: Pause · 1–4: Tempo 1×/2×/4×/8× · L: Kartenebene · T: Statistik · F5/F9: Schnell speichern/laden · F3: Debug · F12: Screenshot\n\n" +
                 "<b>Platzhalter</b>\nKugel = Person (Farbe = Nation, kleine Kugel = Kind), kleiner Würfel darüber = Traglast (rosa Nahrung, braun Holz, grau Stein)\n" +
                 "Quader = Gebäude (hoch: Ortszentrum, mittel: Haus, flach: Lager), grau und flach = Baustelle\n" +
-                "Flache Platte = Feld (braun leer → gold reif)\nRosa Felder = Beeren, dunkelgrün = Bäume, grau = Felsen, braun = Straße, hell kariert = geplante Straße", _small);
+                "Flache Platte = Feld (braun leer → gold reif)\nRosa Felder = Beeren, dunkelgrün = Bäume, grau = Felsen, braun = Straße, hell kariert = geplante Straße\n\n" +
+                "<b>Zufriedenheit</b>\nSatt, eigenes Haus und Straßenanschluss heben sie; Hunger, Obdachlosigkeit, Enge und Krankheit senken sie. " +
+                "Unter 50 im Siedlungsschnitt gibt es keine Geburten, unter 25 arbeiten Personen langsamer.", _small);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace WorldBeyond.Presentation
             {
                 case KeyCode.W: return kb.wKey; case KeyCode.A: return kb.aKey; case KeyCode.S: return kb.sKey; case KeyCode.D: return kb.dKey;
                 case KeyCode.Q: return kb.qKey; case KeyCode.E: return kb.eKey; case KeyCode.B: return kb.bKey; case KeyCode.R: return kb.rKey;
-                case KeyCode.L: return kb.lKey; case KeyCode.F: return kb.fKey; case KeyCode.T: return kb.tKey; case KeyCode.UpArrow: return kb.upArrowKey; case KeyCode.DownArrow: return kb.downArrowKey;
+                case KeyCode.L: return kb.lKey; case KeyCode.F: return kb.fKey; case KeyCode.T: return kb.tKey; case KeyCode.P: return kb.pKey; case KeyCode.UpArrow: return kb.upArrowKey; case KeyCode.DownArrow: return kb.downArrowKey;
                 case KeyCode.LeftArrow: return kb.leftArrowKey; case KeyCode.RightArrow: return kb.rightArrowKey;
                 case KeyCode.Space: return kb.spaceKey; case KeyCode.Escape: return kb.escapeKey;
                 case KeyCode.Alpha1: return kb.digit1Key; case KeyCode.Alpha2: return kb.digit2Key;

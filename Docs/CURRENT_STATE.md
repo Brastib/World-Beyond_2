@@ -30,5 +30,9 @@
 - `dotnet test`: **33/33 bestanden** (3 neue: v2-Migration, Feldzyklus mit Save/Load in der Saison, KI-Felder; Straßentest auf Bau mit Arbeit umgestellt). Feld des Spielers erreicht zum Herbstbeginn das Maximum 600 und wird danach geerntet.
 - Unity: **noch nicht geprüft** (neue UI: Feld-Knopf/F, Feldfarben, geplante Straßen).
 
+## M1 Schritt 3 (Branch m1-zufriedenheit) – Stand 2026-11-04
+- `dotnet test`: **39/39 bestanden** (6 neue: v3-Migration, Zielwert mit Gründen und 5-Punkte-Schritt, Unzufriedenheit verhindert Geburten, Unzufriedenheit bremst Arbeit, Vorrang-Baustelle zuerst fertig plus Replay und Ablehnungen, Monatsverlauf mit Obergrenze und Save/Load). Szenario Seed 12345: Ø Zufriedenheit im ersten Jahr 75–80.
+- Unity: **noch nicht geprüft**. Die neue Anzeige (Zufriedenheit im Inspektor, Vorrang-Knopf, Verlaufsdiagramm) wurde nur geschrieben, nicht in Unity kompiliert.
+
 ## Nächster Schritt
 M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen (Pull Request, Entscheidung des Nutzers).

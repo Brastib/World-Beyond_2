@@ -82,6 +82,8 @@ namespace WorldBeyond.Simulation.Systems
             foreach (var b in Economy.Storages(w, c, s.Id)) { cap += c.Building(b.DefId).StorageCapacity; used += Res.Sum(b.Stock); }
             if (pop == 0) return "Verlassen.";
             if (food < pop * Lifecycle.FoodReservePerPerson) return $"Stagniert: Nahrung knapp ({food} für {pop} Personen, nötig {pop * Lifecycle.FoodReservePerPerson}).";
+            int mood = Satisfaction.Average(w, s.Id);
+            if (mood < Satisfaction.BirthMinimum) return $"Stagniert: Bewohner unzufrieden (Ø {mood}, Geburten ab {Satisfaction.BirthMinimum}).";
             if (cap > 0 && used * 100 >= cap * 95) return $"Stagniert: Lager voll ({used}/{cap}).";
             if (homeless > 0 && Economy.SettlementAvailable(w, c, s.Id, ResourceType.Holz) < c.Building(DefaultContent.House).Cost[(int)ResourceType.Holz])
                 return $"Wartet: {homeless} Haushalt(e) ohne Haus, Holz fehlt.";

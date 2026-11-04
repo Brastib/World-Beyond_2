@@ -30,8 +30,8 @@ namespace WorldBeyond.Simulation.Persistence
     /// </summary>
     public static class SaveCodec
     {
-        /// <summary>v1: M0. v2: Beruf, Geburtstag des Haushalts, Siedlungsstatus/-zähler (M1). v3: Straßenplanung, Feldwachstum.</summary>
-        public const int CurrentFormatVersion = 3;
+        /// <summary>v1: M0. v2: Beruf, Geburtstag des Haushalts, Siedlungsstatus/-zähler (M1). v3: Straßenplanung, Feldwachstum. v4: Zufriedenheit, Baupriorität, Siedlungsverlauf.</summary>
+        public const int CurrentFormatVersion = 4;
         public const string GameVersion = "0.0.1-m0";
         static readonly byte[] Magic = Encoding.ASCII.GetBytes("WBRS");
 

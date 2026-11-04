@@ -31,7 +31,7 @@ namespace WorldBeyond.Simulation.Systems
             for (int k = 0; k < count; k++)
             {
                 var h = w.Households[k];
-                if (!FoodOk(sim, h.SettlementId)) continue;
+                if (!FoodOk(sim, h.SettlementId) || Satisfaction.Average(w, h.SettlementId) < Satisfaction.BirthMinimum) continue;
                 int adults = 0;
                 foreach (var id in h.MemberIds) if (w.PersonById(id).IsAdult) adults++;
                 if (h.HomeBuildingId != 0 && h.MemberIds.Count < capacity && adults >= 2 &&
