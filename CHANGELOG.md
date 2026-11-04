@@ -7,4 +7,5 @@
 - Personen sammeln, liefern ab, tragen Material zu Baustellen und bauen; Haushalte beauftragen Häuser und ziehen ein.
 - Spielerbefehle: Lager bauen, Straße bauen, Zivilisation/Beobachter wählen; Validierung mit Begründung.
 - Save/Load: Binärformat v1 mit SHA-256, Slots, Autosave-Rotation, beschädigte Dateien werden nicht überschrieben.
-- Unity-Platzhalterdarstellung, Kamera, Inspektor, Zeitsteuerung, HUD, Smoke-Test (noch nicht in Unity geprüft).
+- Unity-Platzhalterdarstellung, Kamera, Inspektor, Zeitsteuerung, HUD, Smoke-Test.
+- Unity-Lauf auf 6000.6.0f1: Paketversionen angepasst, von Unity erzeugte Projektdateien ergänzt, Auswahl-Collider werden jedes Frame nachgezogen (Details in Docs/CURRENT_STATE.md).
