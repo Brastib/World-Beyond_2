@@ -10,7 +10,7 @@ Quelle: `Assets/WorldBeyond/Tests/Shared` (laufen auch als Unity-EditMode-Tests)
 | Gameplay M0 | Startzustand, Haushalt sammelt/baut/bezieht Haus, Spieler-Lager wird fertig, ungültige Befehle mit Grund, Straße kostet Stein und beschleunigt, Beobachtermodus |
 | M1 | `V1Save_IsMigrated_AndKeepsRunning`, `Roles_AreAssignedByNeed_…`, `Population_GrowsOverYears_…` (3 Jahre, keine Siedlung stirbt aus), `AiSettlement_BuildsStorage_WhenFull`, `RemovingHauler_ReleasesReservations`, `LastMemberDies_…` |
 | M1 Schritt 2 | `V2Save_IsMigrated_…`, `Road_CostsStone_AndIsFasterToWalk` (Straße entsteht erst durch Arbeit), `Field_GrowsInSpringSummer_HarvestedInAutumn_SaveLoadMidSeason`, `AiSettlements_PlantFields` |
-| M1 Schritt 4 | `V4Save_IsMigrated_…`, `Workshop_TurnsWoodAndStoneIntoTools_…`, `Tools_DoubleWork_AndWearOut`, `SaveDuringCraft_LoadsAndContinuesIdentically`, `AiSettlements_BuildWorkshop_AndProduceTools` |
+| M1 Schritt 4 | `V4Save_IsMigrated_…`, `Workshop_TurnsWoodAndStoneIntoTools_…`, `Tools_DoubleWork_AndWearOut`, `SaveDuringCraft_LoadsAndContinuesIdentically`, `AiSettlements_BuildWorkshop_AndProduceTools`, `Singles_FormFamilies_AndStatusExplainsStagnation` |
 | Invarianten | `ManySeeds_…` (20 Seeds × 600 Ticks), `LongRun_…` (120 Tage), `OneYear_ReportAndBasicHealth`: keine negativen Mengen, keine doppelten Ids, Reservierung = laufende Abholungen, Zulauf = Träger unterwegs, keine kaputten Referenzen |
 
 ## Unity — `Tools\run-unity-tests.ps1` (nur Windows-PC des Nutzers)

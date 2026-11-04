@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased] – M1 Schritt 4: Produktionskette Werkzeug
+- Alleinstehende gründen Familien (abstrakt); der Lagetext nennt den echten Grund für Wachstum oder Stillstand statt immer „Wächst“.
 - Neues Gebäude Werkstatt (Taste H, 20 Holz + 10 Stein) und neuer Beruf Handwerker: 2 Holz + 1 Stein + 6 Std. Arbeit → 1 Werkzeug.
 - Holzfäller, Bergarbeiter und Baumeister nehmen Werkzeug im Lager mit und arbeiten damit doppelt so schnell; es nutzt sich nach 50 Einsätzen ab.
 - KI-Dörfer bauen ab 8 Einwohnern selbst eine Werkstatt. Inspektor zeigt Rezept, Werkstück-Fortschritt und Werkzeug der Person.

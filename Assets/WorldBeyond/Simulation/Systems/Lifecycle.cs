@@ -14,6 +14,7 @@ namespace WorldBeyond.Simulation.Systems
         public const int MoveOutChancePerDay = 30;   // 1 zu 30
         public const int BirthCooldownDays = 360;
         public const int FoodReservePerPerson = 3;
+        public const int PartnershipChancePerDay = 20; // 1 zu 20
 
         public static void Run(WorldSimulation sim)
         {
@@ -40,6 +41,51 @@ namespace WorldBeyond.Simulation.Systems
                 else if (h.MemberIds.Count >= capacity && adults >= 3 && w.Rng.NextInt(MoveOutChancePerDay) == 0)
                     MoveOut(w, h);
             }
+            foreach (var s in w.Settlements) Partnership(w, s.Id);
+        }
+
+        /// <summary>Gibt es in der Siedlung einen Haushalt, der (sofort oder nach Wartezeit) wachsen kann? Für Lagetext-Prüfung.</summary>
+        public static bool CanGrowSomehow(WorldState w, ContentCatalog content, int settlementId)
+        {
+            int capacity = content.Building(DefaultContent.House).HousingCapacity, singles = 0;
+            foreach (var h in w.Households)
+            {
+                if (h.SettlementId != settlementId) continue;
+                int adults = 0;
+                foreach (var id in h.MemberIds) if (w.PersonById(id).IsAdult) adults++;
+                if (IsSingle(w, h)) singles++;
+                if (h.MemberIds.Count >= capacity ? adults >= 3 : h.HomeBuildingId != 0 && adults >= 2) return true;
+            }
+            return singles >= 2;
+        }
+
+        /// <summary>Alleinstehender Erwachsener ohne Kinder (Haushalt mit genau einem Mitglied).</summary>
+        public static bool IsSingle(WorldState w, Household h) =>
+            h.MemberIds.Count == 1 && w.PersonById(h.MemberIds[0]).IsAdult && h.PendingHouseSiteId == 0;
+
+        /// <summary>
+        /// Abstrakte Familienbildung: die zwei ältesten Haushalte von Alleinstehenden einer Siedlung (Id-Reihenfolge)
+        /// werden mit 1/20 pro Tag zusammengelegt. Der Haushalt mit Haus bleibt bestehen, ein zweites Haus wird frei.
+        /// </summary>
+        static void Partnership(WorldState w, int settlementId)
+        {
+            Household a = null, b = null;
+            foreach (var h in w.Households)
+            {
+                if (h.SettlementId != settlementId || !IsSingle(w, h)) continue;
+                if (a == null) a = h; else { b = h; break; }
+            }
+            if (b == null || w.Rng.NextInt(PartnershipChancePerDay) != 0) return;
+            if (a.HomeBuildingId == 0 && b.HomeBuildingId != 0) { var t = a; a = b; b = t; }
+            var mover = w.PersonById(b.MemberIds[0]);
+            var stay = w.PersonById(a.MemberIds[0]);
+            b.MemberIds.Clear();
+            a.MemberIds.Add(mover.Id);
+            mover.HouseholdId = a.Id;
+            foreach (var bd in w.Buildings) if (bd.OwnerHouseholdId == b.Id) bd.OwnerHouseholdId = 0;
+            w.Households.Remove(b);
+            w.AddLog("Bevölkerung", $"{stay.Name} und {mover.Name} gründen eine Familie ({a.Name})" +
+                (b.HomeBuildingId != 0 ? $"; Haus #{b.HomeBuildingId} wird frei." : "."), a.Id);
         }
 
         static bool FoodOk(WorldSimulation sim, int settlementId)

@@ -116,5 +116,30 @@ namespace WorldBeyond.Tests
             Assert.That(ai.Any(s => w.Buildings.Any(b => b.SettlementId == s.Id && b.Complete && b.DefId == DefaultContent.Workshop)), report);
             Assert.That(w.People.Any(p => p.ToolUses > 0) || ai.Any(s => Tools(sim, s.Id) > 0), report);
         }
+
+        [Test]
+        public void Singles_FormFamilies_AndStatusExplainsStagnation()
+        {
+            var sim = TestUtil.NewSim();
+            var w = sim.World;
+            bool family = false;
+            for (int d = 0; d < 3 * Calendar.DaysPerYear; d++)
+            {
+                sim.Run(24);
+                family |= w.Log.Any(l => l.Tick >= w.Tick - 24 && l.Text.Contains("gründen eine Familie"));
+                if (d % 30 == 0) TestUtil.AssertValid(w);
+            }
+            Assert.That(family, "Alleinstehende bilden Familien");
+            Assert.That(w.Households.All(h => h.MemberIds.Count > 0));
+            // Seed 12345 nach 3 Jahren: Häuser voller Familien mit kleinen Kindern → Lagetext muss Stagnation nennen, nicht „Wächst“.
+            var report = string.Join("; ", w.Settlements.Select(s => s.Name + ": " + s.Status));
+            TestContext.WriteLine(report);
+            foreach (var s in w.Settlements)
+            {
+                if (!s.Status.StartsWith("Wächst")) continue;
+                Assert.That(Lifecycle.CanGrowSomehow(w, sim.Content, s.Id), s.Name + " meldet Wachstum ohne Möglichkeit: " + s.Status);
+            }
+            Assert.That(w.Settlements.Any(s => s.Status.StartsWith("Stagniert")), report);
+        }
     }
 }

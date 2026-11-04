@@ -87,14 +87,13 @@ namespace WorldBeyond.Simulation.Systems
         public static string Evaluate(WorldSimulation sim, Settlement s)
         {
             var w = sim.World; var c = sim.Content;
-            int pop = 0, homeless = 0, roomy = 0;
+            int pop = 0, homeless = 0;
             foreach (var p in w.People) if (p.SettlementId == s.Id) pop++;
             int capacity = c.Building(DefaultContent.House).HousingCapacity;
             foreach (var h in w.Households)
             {
                 if (h.SettlementId != s.Id) continue;
                 if (h.HomeBuildingId == 0) homeless++;
-                else if (h.MemberIds.Count < capacity) roomy++;
             }
             int food = Economy.SettlementAvailable(w, c, s.Id, ResourceType.Nahrung);
             int cap = 0, used = 0;
@@ -107,8 +106,24 @@ namespace WorldBeyond.Simulation.Systems
             if (homeless > 0 && Economy.SettlementAvailable(w, c, s.Id, ResourceType.Holz) < c.Building(DefaultContent.House).Cost[(int)ResourceType.Holz])
                 return $"Wartet: {homeless} Haushalt(e) ohne Haus, Holz fehlt.";
             if (homeless > 0) return $"Baut: {homeless} Haushalt(e) ohne Haus.";
-            if (roomy == 0) return "Wächst langsam: Häuser voll, Auszüge gründen neue Haushalte.";
-            return "Wächst: genug Nahrung und Platz in Häusern.";
+            // Wer kann gerade überhaupt wachsen? (gleiche Bedingungen wie in Lifecycle)
+            int families = 0, waiting = 0, moveOut = 0, singles = 0, full = 0;
+            int day = (int)Calendar.Day(w.Tick);
+            foreach (var h in w.Households)
+            {
+                if (h.SettlementId != s.Id) continue;
+                int adults = 0;
+                foreach (var id in h.MemberIds) if (w.PersonById(id).IsAdult) adults++;
+                if (Lifecycle.IsSingle(w, h)) singles++;
+                if (h.MemberIds.Count >= capacity) { full++; if (adults >= 3) moveOut++; continue; }
+                if (h.HomeBuildingId == 0 || adults < 2) continue;
+                if (h.LastBirthDay < 0 || day - h.LastBirthDay >= Lifecycle.BirthCooldownDays) families++; else waiting++;
+            }
+            if (families > 0) return $"Wächst: {families} Familie(n) mit Platz können Kinder bekommen.";
+            if (moveOut > 0) return $"Wächst: {moveOut} volle(r) Haushalt(e), Erwachsene ziehen aus.";
+            if (singles >= 2) return $"Wächst bald: {singles} Alleinstehende können eine Familie gründen.";
+            if (waiting > 0) return $"Wächst langsam: {waiting} Familie(n) warten nach einer Geburt (höchstens 1 Kind pro Jahr).";
+            return $"Stagniert: {full} Haushalt(e) voll ({capacity} Personen), Kinder ziehen erst mit 14 aus; keine Paare mit Platz.";
         }
     }
 }
