@@ -60,6 +60,8 @@ namespace WorldBeyond.Presentation
                     _people[p.Id] = go;
                     _to[p.Id] = CellCenter(m, p.Cell);
                 }
+                float sc = p.IsAdult ? 1f : 0.65f;
+                go.transform.localScale = PlaceholderStyle.Person.Scale * sc;
                 _from[p.Id] = go.transform.position - Vector3.up * PlaceholderStyle.Person.Scale.y * 0.5f;
                 _to[p.Id] = CellCenter(m, p.Cell);
                 var carryT = go.transform.GetChild(0).gameObject;

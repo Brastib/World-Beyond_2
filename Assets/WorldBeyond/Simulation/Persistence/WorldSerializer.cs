@@ -28,11 +28,11 @@ namespace WorldBeyond.Simulation.Persistence
                 o.Write(w.Civilizations.Count);
                 foreach (var c in w.Civilizations) { o.Write(c.Id); o.Write(c.Name); o.Write(c.ColorRgb); o.Write(c.CapitalSettlementId); }
                 o.Write(w.Settlements.Count);
-                foreach (var s in w.Settlements) { o.Write(s.Id); o.Write(s.CivId); o.Write(s.Name); o.Write(s.CenterCell); }
+                foreach (var s in w.Settlements) { o.Write(s.Id); o.Write(s.CivId); o.Write(s.Name); o.Write(s.CenterCell); o.Write(s.Status); o.Write(s.Births); o.Write(s.Deaths); }
                 o.Write(w.Households.Count);
                 foreach (var h in w.Households)
                 {
-                    o.Write(h.Id); o.Write(h.SettlementId); o.Write(h.Name); o.Write(h.HomeBuildingId); o.Write(h.PendingHouseSiteId);
+                    o.Write(h.Id); o.Write(h.SettlementId); o.Write(h.Name); o.Write(h.HomeBuildingId); o.Write(h.PendingHouseSiteId); o.Write(h.LastBirthDay);
                     WriteList(o, h.MemberIds);
                 }
                 o.Write(w.People.Count);
@@ -42,7 +42,7 @@ namespace WorldBeyond.Simulation.Persistence
                     o.Write(p.AgeDays); o.Write(p.Health); o.Write(p.Hunger); o.Write(p.Cell); o.Write((byte)p.Task);
                     o.Write(p.TargetCell); o.Write(p.TargetBuildingId); o.Write((byte)p.TaskResource); o.Write((byte)p.CarryType);
                     o.Write(p.CarryAmount); o.Write(p.Cooldown); o.Write(p.HaulSiteId); o.Write(p.HaulAmount);
-                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered);
+                    o.Write(p.MoveProgress); WriteList(o, p.Path); o.Write(p.PathPos); o.Write(p.TotalGathered); o.Write((byte)p.Role);
                 }
                 o.Write(w.Buildings.Count);
                 foreach (var b in w.Buildings)
@@ -60,7 +60,7 @@ namespace WorldBeyond.Simulation.Persistence
             }
         }
 
-        public static WorldState Deserialize(byte[] payload)
+        public static WorldState Deserialize(byte[] payload, int formatVersion)
         {
             using (var ms = new MemoryStream(payload))
             using (var i = new BinaryReader(ms))
@@ -81,10 +81,15 @@ namespace WorldBeyond.Simulation.Persistence
                 for (int c = Count(i); c > 0; c--)
                     w.Civilizations.Add(new Civilization { Id = i.ReadInt32(), Name = i.ReadString(), ColorRgb = i.ReadUInt32(), CapitalSettlementId = i.ReadInt32() });
                 for (int c = Count(i); c > 0; c--)
-                    w.Settlements.Add(new Settlement { Id = i.ReadInt32(), CivId = i.ReadInt32(), Name = i.ReadString(), CenterCell = i.ReadInt32() });
+                {
+                    var s = new Settlement { Id = i.ReadInt32(), CivId = i.ReadInt32(), Name = i.ReadString(), CenterCell = i.ReadInt32() };
+                    if (formatVersion >= 2) { s.Status = i.ReadString(); s.Births = i.ReadInt32(); s.Deaths = i.ReadInt32(); }
+                    w.Settlements.Add(s);
+                }
                 for (int c = Count(i); c > 0; c--)
                 {
                     var h = new Household { Id = i.ReadInt32(), SettlementId = i.ReadInt32(), Name = i.ReadString(), HomeBuildingId = i.ReadInt32(), PendingHouseSiteId = i.ReadInt32() };
+                    if (formatVersion >= 2) h.LastBirthDay = i.ReadInt32();
                     ReadList(i, h.MemberIds);
                     w.Households.Add(h);
                 }
@@ -99,6 +104,8 @@ namespace WorldBeyond.Simulation.Persistence
                     };
                     ReadList(i, p.Path);
                     p.PathPos = i.ReadInt32(); p.TotalGathered = i.ReadInt32();
+                    // Migration v1 → v2: Beruf deterministisch aus dem Alter; die tägliche Zuteilung verteilt danach neu.
+                    p.Role = formatVersion >= 2 ? (Role)i.ReadByte() : (p.IsAdult ? Role.Sammler : Role.Kind);
                     w.People.Add(p);
                 }
                 for (int c = Count(i); c > 0; c--)

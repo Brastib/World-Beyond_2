@@ -62,11 +62,12 @@ namespace WorldBeyond.Simulation.Systems
             }
             w.PlayerCivId = w.Civilizations[0].Id;
             w.RebuildDerived();
+            Jobs.Assign(w, content);
             w.AddLog("Welt", $"Neue Welt mit Seed {seed} erzeugt: {w.Settlements.Count} Siedlungen, {w.People.Count} Personen.");
             return w;
         }
 
-        static string RandomName(DeterministicRandom rng) => Syl1[rng.NextInt(Syl1.Length)] + Syl2[rng.NextInt(Syl2.Length)];
+        public static string RandomName(DeterministicRandom rng) => Syl1[rng.NextInt(Syl1.Length)] + Syl2[rng.NextInt(Syl2.Length)];
 
         static List<int> PickSettlementSites(WorldState w)
         {

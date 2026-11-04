@@ -20,5 +20,9 @@
 - Aktiv ist das alte Input-System (`activeInputHandler: 0`), obwohl das Input-System-Paket installiert ist.
 - M0-Vereinfachungen siehe DECISIONS ADR-009.
 
+## M1 Schritt 1 (Branch m1-wachstum) – Stand 2026-11-04
+- `dotnet test`: **30/30 bestanden** (24 alte + 6 neue M1-Tests). Szenario Seed 12345, 3 Jahre: 18 → 30 Personen, 6 → 12 Haushalte, 12 Häuser, 12 Geburten, 0 Tode, alle drei Siedlungen „Wächst“.
+- Unity: **noch nicht geprüft** (UI-Änderungen: Statistik-Panel, Beruf im Inspektor, Kinder kleiner).
+
 ## Nächster Schritt
 M1 „Siedlung wächst nachvollziehbar“: Berufe, Produktionsketten, Bauaufträge mit Arbeit für Straßen, Parzellen, Bedürfnisse, saisonale Erträge, Baupriorität, einfache Forschung, Statistik. Vorher: Branch `unity-fixes-m0` nach `main` mergen (Pull Request, Entscheidung des Nutzers).
