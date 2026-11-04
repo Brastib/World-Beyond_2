@@ -12,8 +12,9 @@
 
 ## Manuell: teilweise
 - 2026-11-04 15:34: `WorldBeyond.exe` läuft auf dem PC des Nutzers, Nutzer meldet „Es geht“. Welche Einzelschritte geprüft wurden, ist nicht protokolliert.
-- **NICHT geprüft:** Speichern → Programm neu starten → Laden. Um 15:36 lag kein manuell gespeicherter Stand im Saves-Ordner (nur Autosaves und Smoke-Stand).
-- Offen je ja/nein: Klick-Auswahl → Inspektor, Lager per B bauen, Tempo/Kamera, F5 → Neustart → F9.
+- 2026-11-04 15:39: Nutzer meldet „Habe es getestet geht“, wieder ohne Einzelangaben. Auf der Platte belegt: `slot1.wbsave` um 15:38 im laufenden Spiel gespeichert, keine Exception im Spiel-Log bis 15:39.
+- **NICHT geprüft:** Speichern → Programm neu starten → Laden. Um 15:39 lief noch derselbe Spielprozess wie seit 15:34, also vor dem Speichern gestartet.
+- Offen je ja/nein: Klick-Auswahl → Inspektor, Lager per B bauen, Tempo/Kamera, `slot1` nach Neustart laden.
 
 ## Bekannte Risiken
 - `BillingMode.json` (Purchasing-Überbleibsel) entfernt in 1827cd4; danach kein neuer Unity-Lauf (reine Löschung einer unreferenzierten Datei).
